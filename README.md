@@ -58,6 +58,17 @@ The scripts read environment variables from the process; they do not load `.env`
 
 `IBACALAO_LLM_MAX_TOKENS` caps output per draft so a bad job cannot run up your bill.
 
+The API worker prints its current state without logging assignment titles. For example:
+
+```text
+[homework-agent] Starting API mode (continuous polling every 15 seconds).
+[homework-agent] Connected to https://app.ibacalao.com; no assignments are waiting. Checking again in 15 seconds.
+[homework-agent] Claimed job job-123; generating draft.
+[homework-agent] Draft saved for review. Saved job job-123 as ready_for_review. The school platform was not changed.
+```
+
+If generation fails, the worker reports whether it confirmed releasing the job. If it cannot confirm, check the assignment in iBacalao before retrying.
+
 ## Self-hosting a different server
 
 The bot speaks a small HTTP protocol, documented in [docs/PROTOCOL.md](docs/PROTOCOL.md).
