@@ -9,6 +9,10 @@ Open-source local agent that turns your iBacalao assignment queue into **drafts 
 
 Your agent token only goes to the iBacalao server you configure (HTTPS enforced, redirects refused). In API mode your model key only goes to the endpoint you configure. No local CLI is ever executed.
 
+## Data and privacy
+
+This agent runs on your computer, but assignment content is sent to the AI service you choose. In API mode, the full job prompt returned by iBacalao is sent to `IBACALAO_LLM_BASE_URL`. In MCP mode, the prompt is provided to the AI app hosting this MCP server. A prompt can include assignment text and source material from a school platform. The selected provider's retention and training settings apply; this project does not control or verify them. Check those settings and make sure you are allowed to send the material before using the agent.
+
 ## Setup (both modes)
 
 ```bash
@@ -25,23 +29,30 @@ Add this server to your MCP-capable AI app (example config):
 {
   "mcpServers": {
     "ibacalao-homework": {
-      "command": "npx",
-      "args": ["tsx", "/absolute/path/to/ibacalao-homework-automation/src/mcp.ts"],
+      "command": "/absolute/path/to/ibacalao-homework-automation/node_modules/.bin/tsx",
+      "args": ["/absolute/path/to/ibacalao-homework-automation/src/mcp.ts"],
       "env": { "IBACALAO_AGENT_TOKEN": "<your agent token>" }
     }
   }
 }
 ```
 
+Replace both paths with the absolute path in your clone. Run `npm ci` there first so the local `tsx` executable exists.
+
 Then ask your AI app: "Claim the next homework job, write a draft, and submit it." It uses three tools: `claim_homework_job`, `submit_homework_draft`, `fail_homework_job`. The AI work happens inside your own subscription. Use a chat that has no other powerful tools enabled (files, shell, browser), because assignment text is untrusted input.
 
 ## API-key mode
 
 ```bash
-cp .env.example .env   # fill in, then export the variables
+cp .env.example .env   # edit with your values
+set -a                 # macOS/Linux bash or zsh: export values from .env
+. ./.env
+set +a
 npm run once           # one job
 npm start              # keep polling
 ```
+
+The scripts read environment variables from the process; they do not load `.env` themselves. On Windows, set the variables in your shell or MCP app configuration instead.
 
 `IBACALAO_LLM_MAX_TOKENS` caps output per draft so a bad job cannot run up your bill.
 
