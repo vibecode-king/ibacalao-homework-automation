@@ -1,6 +1,6 @@
 # iBacalao Homework Automation
 
-Open-source local agent that turns your iBacalao assignment queue into **drafts for you to review**. It never submits anything to your school, and it never uses a shared model key. You choose how the writing is done:
+Local agent that turns your iBacalao assignment queue into **drafts for you to review**. It never submits anything to your school, and it never uses a shared model key. You choose how the writing is done:
 
 | Mode | Use it when | Needs |
 |---|---|---|
@@ -41,7 +41,7 @@ Add this server to your MCP-capable AI app (example config):
 
 Replace both paths with the absolute path in your clone. Run `npm ci` there first so the local `tsx` executable exists.
 
-Then ask your AI app: "Claim the next homework job, write a draft, and submit it." It uses three tools: `claim_homework_job`, `submit_homework_draft`, `fail_homework_job`. The AI work happens inside your own subscription. Use a chat that has no other powerful tools enabled (files, shell, browser), because assignment text is untrusted input.
+Then ask your AI app: "Claim the next homework job, write a draft, and save it for me to review." It uses three tools: `claim_homework_job`, `submit_homework_draft`, `fail_homework_job`. The AI work happens inside your own subscription. Use a chat that has no other powerful tools enabled (files, shell, browser), because assignment text is untrusted input.
 
 ## API-key mode
 
