@@ -20,7 +20,7 @@ function send(res: ServerResponse, status: number, body: unknown): void {
   res.end(JSON.stringify(body));
 }
 
-test("Ping Bot claims a job, calls the configured model endpoint, and sends the artifact for review", async () => {
+test("Homework agent claims a job, calls the configured model endpoint, and sends the artifact for review", async () => {
   const completions: Record<string, unknown>[] = [];
   let modelPrompt = "";
   let claimCount = 0;
@@ -84,7 +84,7 @@ test("Ping Bot claims a job, calls the configured model endpoint, and sends the 
     ...process.env,
     IBACALAO_BASE_URL: `http://127.0.0.1:${address.port}`,
     IBACALAO_AGENT_TOKEN: "agt_test_token",
-    IBACALAO_AGENT_ID: "ping-bot-e2e",
+    IBACALAO_AGENT_ID: "homework-agent-e2e",
   };
   env.IBACALAO_LLM_BASE_URL = "http://127.0.0.1:" + address.port + "/v1";
   env.IBACALAO_LLM_MODEL = "local-test-model";
@@ -98,7 +98,7 @@ test("Ping Bot claims a job, calls the configured model endpoint, and sends the 
     child.stdout.setEncoding("utf8").on("data", (chunk: string) => { stdout += chunk; });
     child.stderr.setEncoding("utf8").on("data", (chunk: string) => { stderr += chunk; });
     const [code] = await once(child, "close") as [number | null];
-    assert.equal(code, 0, `Ping Bot exited unsuccessfully. stdout=${stdout} stderr=${stderr}`);
+    assert.equal(code, 0, `Homework agent exited unsuccessfully. stdout=${stdout} stderr=${stderr}`);
     assert.equal(claimCount, 1);
     assert.match(modelPrompt, /short, reviewable source comparison/);
     assert.equal(completionCount, 2, "the exact completion payload should be retried after a transient server error");
@@ -117,7 +117,7 @@ test("Ping Bot claims a job, calls the configured model endpoint, and sends the 
   }
 });
 
-test("Ping Bot rejects local CLI mode before claiming an assignment", async () => {
+test("Homework agent rejects local CLI mode before claiming an assignment", async () => {
   const env = {
     ...process.env,
     IBACALAO_BASE_URL: "http://127.0.0.1:1",
@@ -141,7 +141,7 @@ test("Ping Bot rejects local CLI mode before claiming an assignment", async () =
   assert.doesNotMatch(stdout, /Claimed/);
 });
 
-test("Ping Bot rejects an oversized agent API response before parsing or contacting the model", async () => {
+test("Homework agent rejects an oversized agent API response before parsing or contacting the model", async () => {
   let modelCalled = false;
   const server = createServer(async (req, res) => {
     if (req.method === "POST" && req.url === "/api/agent/jobs/claim") {
@@ -162,7 +162,7 @@ test("Ping Bot rejects an oversized agent API response before parsing or contact
     ...process.env,
     IBACALAO_BASE_URL: `http://127.0.0.1:${address.port}`,
     IBACALAO_AGENT_TOKEN: "agt_synthetic-test-token",
-    IBACALAO_AGENT_ID: "ping-bot-size-test",
+    IBACALAO_AGENT_ID: "homework-agent-size-test",
     IBACALAO_LLM_BASE_URL: `http://127.0.0.1:${address.port}/v1`,
     IBACALAO_LLM_API_KEY: "synthetic-local-key",
   };
@@ -174,7 +174,7 @@ test("Ping Bot rejects an oversized agent API response before parsing or contact
     child.stdout.setEncoding("utf8").on("data", (chunk: string) => { stdout += chunk; });
     child.stderr.setEncoding("utf8").on("data", (chunk: string) => { stderr += chunk; });
     const [code] = await once(child, "close") as [number | null];
-    assert.equal(code, 1, `Ping Bot should fail closed. stdout=${stdout} stderr=${stderr}`);
+    assert.equal(code, 1, `Homework agent should fail closed. stdout=${stdout} stderr=${stderr}`);
     assert.match(stderr, /upstream response exceeded the size limit/i);
     assert.equal(modelCalled, false);
   } finally {

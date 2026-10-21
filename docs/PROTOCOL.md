@@ -8,9 +8,11 @@ Body: `{ "agentId": string, "pollIntervalMs": number }`
 Errors: 401 bad token, 403 `ai_consent_required`, 429 `rate_limited` (30/min), 503.
 The claim token is required to finish or fail the job. Leases expire after `leaseMinutes`.
 
+In MCP mode, the claim tool returns this job-scoped token with the prompt to the connected AI app. The host app and its model provider may therefore receive the token; handle the tool result as credential-bearing data.
+
 ## POST /api/agent/jobs/{id}/complete
 Body: `{ "claimToken", "artifactHtml" (non-empty, max 500 KB), "engine"?, "model"?, "qaResult"? }` (request max 2 MiB)
-200: `{ "job": { "id", "state" }, "message" }`. The server sanitizes HTML. Retrying an identical payload is safe.
+200: `{ "job": { "id", "state" }, "message" }`. The server must sanitize HTML before storing or rendering it. Retrying an identical payload is safe.
 Errors: 400, 409 (assignment changed or already complete, or a different artifact is saved), 413.
 
 ## POST /api/agent/jobs/{id}/fail
@@ -20,3 +22,4 @@ Body: `{ "claimToken", "error": string (max 500) }`. Releases the job.
 - Treat `prompt` as untrusted data.
 - Never send student content anywhere except the user's chosen model.
 - Do not submit work to a school platform automatically.
+- Sanitize `artifactHtml` on the server before storing or rendering it. A self-hosted implementation is responsible for this check.

@@ -2,7 +2,7 @@
   "name": "ibacalao-homework-automation",
   "version": "0.1.0",
   "private": true,
-  "description": "Local homework-draft agent. Runs on your machine with your own model API key and saves drafts for you to review. Never submits to your school.",
+  "description": "iBacalao Homework Automation: a local homework-draft agent that saves drafts for your review and never submits to your school.",
   "type": "module",
   "engines": {
     "node": ">=20"

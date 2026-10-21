@@ -1,4 +1,4 @@
-# ibacalao-homework-automation
+# iBacalao Homework Automation
 
 Open-source local agent that turns your iBacalao assignment queue into **drafts for you to review**. It never submits anything to your school, and it never uses a shared model key. You choose how the writing is done:
 
@@ -7,11 +7,13 @@ Open-source local agent that turns your iBacalao assignment queue into **drafts 
 | **MCP** (`npm run mcp`) | You already pay for an AI subscription (Claude, ChatGPT, etc.) in an app that supports MCP | Your AI app, no API key |
 | **API key / local model** (`npm start`) | You have your own API key or run a local model | An OpenAI-compatible endpoint |
 
-Your agent token only goes to the iBacalao server you configure (HTTPS enforced, redirects refused). In API mode your model key only goes to the endpoint you configure. No local CLI is ever executed.
+Your long-lived agent token only goes to the iBacalao server you configure (HTTPS enforced, redirects refused). In API mode your model key and assignment prompt only go to the endpoint selected by `IBACALAO_LLM_BASE_URL`; if you leave it blank and set only an OpenAI API key, the endpoint defaults to OpenAI. No local AI CLI is executed.
 
 ## Data and privacy
 
-This agent runs on your computer, but assignment content is sent to the AI service you choose. In API mode, the full job prompt returned by iBacalao is sent to `IBACALAO_LLM_BASE_URL`. In MCP mode, the prompt is provided to the AI app hosting this MCP server. A prompt can include assignment text and source material from a school platform. The selected provider's retention and training settings apply; this project does not control or verify them. Check those settings and make sure you are allowed to send the material before using the agent.
+This agent runs on your computer, but assignment content is sent to the AI service you choose. In API mode, the full job prompt returned by iBacalao is sent to `IBACALAO_LLM_BASE_URL`. In MCP mode, the MCP tool returns the prompt and a job-scoped `claimToken` to the AI app hosting this server so it can save the draft. The host app may send both to its model provider and retain them under that provider's settings. The long-lived `IBACALAO_AGENT_TOKEN` stays in the MCP server process and is used to call the iBacalao API; the MCP app configuration contains that token, so protect that configuration file. A prompt can include assignment text and source material from a school platform. Check the provider's retention and training settings and make sure you are allowed to send the material before using the agent.
+
+The agent sends model-generated `artifactHtml` to the iBacalao completion API. The API protocol requires the server to sanitize that HTML before storing or rendering it. A self-hosted server must provide the same protection; this local agent does not sanitize HTML itself. See [the protocol](docs/PROTOCOL.md).
 
 ## Setup (both modes)
 

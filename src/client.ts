@@ -5,7 +5,7 @@ const MAX_AGENT_API_RESPONSE_BYTES = 2 * 1024 * 1024;
 
 export function createAgentApiClient(baseUrl: string, token: string | undefined) {
   async function request<T>(path: string, body?: unknown): Promise<T> {
-    if (!token) throw new Error("Set IBACALAO_AGENT_TOKEN in this terminal before starting Ping Bot.");
+    if (!token) throw new Error("Set IBACALAO_AGENT_TOKEN in this terminal before starting the homework agent.");
     let response: Response;
     try {
       response = await fetch(`${baseUrl}${path}`, {

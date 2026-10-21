@@ -24,7 +24,7 @@ async function processOne(): Promise<boolean> {
   const job = result.job;
   if (!job) return false;
 
-  console.log(`[ping-bot] Claimed ${job.id}: ${job.title}`);
+  console.log(`[homework-agent] Claimed ${job.id}: ${job.title}`);
   let output: Awaited<ReturnType<typeof runConfiguredAssignmentAgent>>;
   try {
     output = await runConfiguredAssignmentAgent(job.prompt);
@@ -46,26 +46,26 @@ async function processOne(): Promise<boolean> {
   // Retrying the identical payload is safe; calling /fail here could consume a
   // claim token that the completion already cleared.
   const saved = await submitCompletion<{ job: { id: string; state: string }; message: string }>(completionPath, completionBody);
-  console.log(`[ping-bot] Saved ${saved.job.id} as ${saved.job.state}. The school platform was not changed.`);
+  console.log(`[homework-agent] Saved ${saved.job.id} as ${saved.job.state}. The school platform was not changed.`);
   return true;
 }
 
 async function main(): Promise<void> {
-  if (!token) throw new Error("Set IBACALAO_AGENT_TOKEN before starting Ping Bot.");
+  if (!token) throw new Error("Set IBACALAO_AGENT_TOKEN before starting the homework agent.");
   if (process.env.IBACALAO_AGENT_COMMAND?.trim()) {
     throw new Error("IBACALAO_AGENT_COMMAND is disabled because local CLI execution is not sandboxed. Unset it and configure IBACALAO_LLM_BASE_URL instead.");
   }
   if (!process.env.IBACALAO_LLM_BASE_URL?.trim() && !process.env.IBACALAO_LLM_API_KEY?.trim()) {
     throw new Error("Configure IBACALAO_LLM_BASE_URL for a BYOK or self-hosted model endpoint, and optionally set IBACALAO_LLM_API_KEY.");
   }
-  console.log(`[ping-bot] Connected to ${baseUrl}; agent id ${agentId}; mode ${once ? "one job" : "continuous"}.`);
+  console.log(`[homework-agent] Connected to ${baseUrl}; agent id ${agentId}; mode ${once ? "one job" : "continuous"}.`);
   do {
     try {
       const found = await processOne();
       if (once) return;
       if (!found) await sleep(pollMs);
     } catch (error) {
-      console.error(`[ping-bot] ${error instanceof Error ? error.message : "Agent cycle failed."}`);
+      console.error(`[homework-agent] ${error instanceof Error ? error.message : "Agent cycle failed."}`);
       if (once) throw error;
       await sleep(pollMs);
     }
@@ -73,6 +73,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error) => {
-  console.error(`[ping-bot] stopped: ${error instanceof Error ? error.message : "Unknown error."}`);
+  console.error(`[homework-agent] stopped: ${error instanceof Error ? error.message : "Unknown error."}`);
   process.exitCode = 1;
 });
