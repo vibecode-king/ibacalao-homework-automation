@@ -1,0 +1,20 @@
+{
+  "name": "ibacalao-ping-bot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local homework-draft agent. Runs on your machine with your own model API key and saves drafts for you to review. Never submits to your school.",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "tsx src/ping.ts",
+    "once": "tsx src/ping.ts --once",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "check": "npm run typecheck && npm test"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}
