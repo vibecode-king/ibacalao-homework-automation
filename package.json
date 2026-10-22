@@ -10,6 +10,7 @@
   "scripts": {
     "start": "tsx src/ping.ts",
     "once": "tsx src/ping.ts --once",
+    "pair": "tsx src/pair.ts",
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test tests/*.test.ts",
     "check": "npm run typecheck && npm test",

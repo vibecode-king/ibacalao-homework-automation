@@ -20,9 +20,19 @@ const agentId = (process.env.IBACALAO_AGENT_ID || `${hostname()}-${process.pid}`
 
 const { request, submitCompletion } = createAgentApiClient(baseUrl, token);
 let waitingMessageShown = false;
+let pausedMessageShown = false;
+let activeJobId: string | null = null;
 
 async function processOne(): Promise<boolean> {
-  const result = await request<{ job: ClaimedJob | null }>("/api/agent/jobs/claim", { agentId, pollIntervalMs: pollMs });
+  const result = await request<{ job: ClaimedJob | null; paused?: boolean; reason?: string }>("/api/agent/jobs/claim", { agentId, pollIntervalMs: pollMs });
+  if (result.paused) {
+    if (!pausedMessageShown) {
+      console.log("[homework-agent] Connected, but drafting is paused until DOCX-preserving support is available.");
+      pausedMessageShown = true;
+    }
+    return false;
+  }
+  pausedMessageShown = false;
   const job = result.job;
   if (!job) {
     if (!waitingMessageShown) {
@@ -36,15 +46,8 @@ async function processOne(): Promise<boolean> {
   }
 
   waitingMessageShown = false;
+  activeJobId = job.id;
   console.log(`[homework-agent] Claimed job ${job.id}; generating draft.`);
-  const heartbeatInterval = setInterval(() => {
-    void request("/api/agent/health", {
-      agentId,
-      status: "working",
-      pollIntervalMs: pollMs,
-      activeJobId: job.id,
-    }).catch(() => undefined);
-  }, 30_000);
   try {
     let output: Awaited<ReturnType<typeof runConfiguredAssignmentAgent>>;
     try {
@@ -74,13 +77,13 @@ async function processOne(): Promise<boolean> {
     // claim token that the completion already cleared.
     const saved = await submitCompletion<{ job: { id: string; state: string }; message: string }>(completionPath, completionBody);
     console.log(`[homework-agent] Draft saved for review. Saved job ${saved.job.id} as ${saved.job.state}. The school platform was not changed.`);
+    activeJobId = null;
     await request("/api/agent/health", { agentId, status: "idle", pollIntervalMs: pollMs }).catch(() => undefined);
     return true;
   } catch (error) {
+    activeJobId = null;
     await request("/api/agent/health", { agentId, status: "error", pollIntervalMs: pollMs }).catch(() => undefined);
     throw error;
-  } finally {
-    clearInterval(heartbeatInterval);
   }
 }
 
@@ -93,17 +96,29 @@ async function main(): Promise<void> {
     throw new Error("Configure IBACALAO_LLM_BASE_URL for a BYOK or self-hosted model endpoint, and optionally set IBACALAO_LLM_API_KEY.");
   }
   console.log(`[homework-agent] Starting API mode (${once ? "one job" : `continuous polling every ${Math.ceil(pollMs / 1_000)} seconds`}).`);
-  do {
-    try {
-      const found = await processOne();
-      if (once) return;
-      if (!found) await sleep(pollMs);
-    } catch (error) {
-      if (once) throw error;
-      console.error(`[homework-agent] ${error instanceof Error ? error.message : "Agent cycle failed."}`);
-      await sleep(pollMs);
-    }
-  } while (!once);
+  const reportHealth = () => request("/api/agent/health", {
+    agentId,
+    status: activeJobId ? "working" : "polling",
+    pollIntervalMs: pollMs,
+    ...(activeJobId ? { activeJobId } : {}),
+  }).catch(() => undefined);
+  await reportHealth();
+  const heartbeat = setInterval(() => { void reportHealth(); }, 30_000);
+  try {
+    do {
+      try {
+        const found = await processOne();
+        if (once) return;
+        if (!found) await sleep(pollMs);
+      } catch (error) {
+        if (once) throw error;
+        console.error(`[homework-agent] ${error instanceof Error ? error.message : "Agent cycle failed."}`);
+        await sleep(pollMs);
+      }
+    } while (!once);
+  } finally {
+    clearInterval(heartbeat);
+  }
 }
 
 main().catch((error) => {
