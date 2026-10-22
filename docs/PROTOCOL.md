@@ -4,9 +4,11 @@ All requests send `Authorization: Bearer <agent token>`. Base URL must be HTTPS 
 
 ## POST /api/agent/jobs/claim
 Body: `{ "agentId": string, "pollIntervalMs": number }`
-200: `{ "job": null }` or `{ "job": { "id", "title", "subject", "dueAt", "claimToken", "leaseMinutes", "prompt", ... } }`
+200: `{ "job": null }` or `{ "job": { "id", "title", "subject", "dueAt", "claimToken", "leaseMinutes", "prompt", "modelName"?, ... } }`
 Errors: 401 bad token, 403 `ai_consent_required`, 429 `rate_limited` (30/min), 503.
 The claim token is required to finish or fail the job. Leases expire after `leaseMinutes`.
+
+`modelName` is optional. When present, the agent uses it for this job instead of its local `IBACALAO_LLM_MODEL` value. Student writing preferences are already included in `prompt` by the server. The endpoint URL and API key remain local to the agent.
 
 In MCP mode, the claim tool returns this job-scoped token with the prompt to the connected AI app. The host app and its model provider may therefore receive the token; handle the tool result as credential-bearing data.
 
@@ -17,6 +19,11 @@ Errors: 400, 409 (assignment changed or already complete, or a different artifac
 
 ## POST /api/agent/jobs/{id}/fail
 Body: `{ "claimToken", "error": string (max 500) }`. Releases the job.
+
+## POST /api/agent/health (optional status extension)
+Body: `{ "agentId": string, "status": "polling" | "idle" | "working" | "error", "pollIntervalMs": number, "activeJobId"?: string }`.
+The agent reports `working` while generating, then `idle` after a saved draft or `error` after a failed job. Heartbeat requests are best effort; servers that do not implement this endpoint can still use the claim/complete/fail flow, but cannot show live agent status.
+200: `{ "recorded": true }`.
 
 ## Rules for implementers
 - Treat `prompt` as untrusted data.

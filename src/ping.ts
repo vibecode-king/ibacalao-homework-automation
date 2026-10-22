@@ -9,6 +9,7 @@ type ClaimedJob = {
   title: string;
   claimToken: string;
   prompt: string;
+  modelName?: string;
 };
 
 const baseUrl = normalizeAgentServiceBaseUrl(process.env.IBACALAO_BASE_URL || "https://app.ibacalao.com");
@@ -36,35 +37,51 @@ async function processOne(): Promise<boolean> {
 
   waitingMessageShown = false;
   console.log(`[homework-agent] Claimed job ${job.id}; generating draft.`);
-  let output: Awaited<ReturnType<typeof runConfiguredAssignmentAgent>>;
+  const heartbeatInterval = setInterval(() => {
+    void request("/api/agent/health", {
+      agentId,
+      status: "working",
+      pollIntervalMs: pollMs,
+      activeJobId: job.id,
+    }).catch(() => undefined);
+  }, 30_000);
   try {
-    output = await runConfiguredAssignmentAgent(job.prompt);
-  } catch (error) {
-    const message = error instanceof Error ? error.message.slice(0, 400) : "Agent failed.";
-    let releaseConfirmed = false;
+    let output: Awaited<ReturnType<typeof runConfiguredAssignmentAgent>>;
     try {
-      await request(`/api/agent/jobs/${encodeURIComponent(job.id)}/fail`, { claimToken: job.claimToken, error: message });
-      releaseConfirmed = true;
-    } catch {
-      // Report uncertainty rather than claiming that the job was released.
+      output = await runConfiguredAssignmentAgent(job.prompt, job.modelName);
+    } catch (error) {
+      const message = error instanceof Error ? error.message.slice(0, 400) : "Agent failed.";
+      let releaseConfirmed = false;
+      try {
+        await request(`/api/agent/jobs/${encodeURIComponent(job.id)}/fail`, { claimToken: job.claimToken, error: message });
+        releaseConfirmed = true;
+      } catch {
+        // Report uncertainty rather than claiming that the job was released.
+      }
+      throw new Error(`Draft generation failed for job ${job.id}; ${releaseConfirmed ? "job released" : "job release could not be confirmed"}. ${message}`);
     }
-    throw new Error(`Draft generation failed for job ${job.id}; ${releaseConfirmed ? "job released" : "job release could not be confirmed"}. ${message}`);
-  }
 
-  const completionPath = `/api/agent/jobs/${encodeURIComponent(job.id)}/complete`;
-  const completionBody = {
-    claimToken: job.claimToken,
-    artifactHtml: output.artifactHtml,
-    engine: output.engine,
-    model: output.model,
-    qaResult: output.qaResult,
-  };
-  // A completion request can persist the artifact before returning an error.
-  // Retrying the identical payload is safe; calling /fail here could consume a
-  // claim token that the completion already cleared.
-  const saved = await submitCompletion<{ job: { id: string; state: string }; message: string }>(completionPath, completionBody);
-  console.log(`[homework-agent] Draft saved for review. Saved job ${saved.job.id} as ${saved.job.state}. The school platform was not changed.`);
-  return true;
+    const completionPath = `/api/agent/jobs/${encodeURIComponent(job.id)}/complete`;
+    const completionBody = {
+      claimToken: job.claimToken,
+      artifactHtml: output.artifactHtml,
+      engine: output.engine,
+      model: output.model,
+      qaResult: output.qaResult,
+    };
+    // A completion request can persist the artifact before returning an error.
+    // Retrying the identical payload is safe; calling /fail here could consume a
+    // claim token that the completion already cleared.
+    const saved = await submitCompletion<{ job: { id: string; state: string }; message: string }>(completionPath, completionBody);
+    console.log(`[homework-agent] Draft saved for review. Saved job ${saved.job.id} as ${saved.job.state}. The school platform was not changed.`);
+    await request("/api/agent/health", { agentId, status: "idle", pollIntervalMs: pollMs }).catch(() => undefined);
+    return true;
+  } catch (error) {
+    await request("/api/agent/health", { agentId, status: "error", pollIntervalMs: pollMs }).catch(() => undefined);
+    throw error;
+  } finally {
+    clearInterval(heartbeatInterval);
+  }
 }
 
 async function main(): Promise<void> {

@@ -35,13 +35,17 @@ export function parseAssignmentAgentResult(raw: string, defaults: { engine: stri
   };
 }
 
-async function runOpenAiCompatible(prompt: string): Promise<AssignmentAgentResult> {
+async function runOpenAiCompatible(prompt: string, preferredModel?: string): Promise<AssignmentAgentResult> {
   const configuredBaseUrl = (process.env.IBACALAO_LLM_BASE_URL || (process.env.IBACALAO_LLM_API_KEY ? "https://api.openai.com/v1" : "")).trim();
   if (!configuredBaseUrl) {
     throw new Error("Configure IBACALAO_LLM_BASE_URL for a BYOK or self-hosted model endpoint, and optionally set IBACALAO_LLM_API_KEY.");
   }
   const baseUrl = normalizeAgentServiceBaseUrl(configuredBaseUrl);
-  const model = (process.env.IBACALAO_LLM_MODEL || "gpt-4o-mini").trim();
+  const requestedModel = typeof preferredModel === "string" ? preferredModel.trim() : "";
+  const model = (requestedModel || process.env.IBACALAO_LLM_MODEL || "gpt-4o-mini").trim();
+  if (model.length > 160 || /[\u0000-\u001f\u007f]/.test(model)) {
+    throw new Error("The configured model name is invalid.");
+  }
   const endpoint = `${baseUrl.replace(/\/+$/, "")}/chat/completions`;
   const headers: Record<string, string> = { "content-type": "application/json" };
   if (process.env.IBACALAO_LLM_API_KEY) headers.authorization = `Bearer ${process.env.IBACALAO_LLM_API_KEY}`;
@@ -122,9 +126,9 @@ export async function readBoundedModelResponse(response: Response, maxBytes = MA
 }
 
 /** Send the prompt only to the explicitly configured OpenAI-compatible endpoint. */
-export async function runConfiguredAssignmentAgent(prompt: string): Promise<AssignmentAgentResult> {
+export async function runConfiguredAssignmentAgent(prompt: string, preferredModel?: string): Promise<AssignmentAgentResult> {
   if (process.env.IBACALAO_AGENT_COMMAND?.trim()) {
     throw new Error("IBACALAO_AGENT_COMMAND is disabled because local CLI execution is not sandboxed. Unset it and configure IBACALAO_LLM_BASE_URL instead.");
   }
-  return runOpenAiCompatible(prompt);
+  return runOpenAiCompatible(prompt, preferredModel);
 }

@@ -69,7 +69,6 @@
     .product-label { overflow: hidden; color: var(--secondary); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
     .header-right { gap: 20px; }
     .header-context { gap: 9px; color: var(--muted); font-size: 12px; }
-    .live-dot { width: 7px; height: 7px; border: 1px solid var(--accent); background: var(--accent); }
     .sample-stamp { padding: 7px 9px; border: 1px solid var(--edge); color: var(--accent-bright); font: 9px/1.2 var(--font-mono); letter-spacing: .1em; white-space: nowrap; }
     .app-layout {
       display: grid; grid-template-columns: 208px minmax(0, 1fr) 252px; gap: 24px;
@@ -99,7 +98,8 @@
     .eyebrow { margin: 0 0 9px; color: var(--accent-bright); font: 10px/1.35 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; }
     h1, h2, h3, p { margin-top: 0; }
     h1, h2, h3 { font-family: var(--font-display); font-weight: 560; letter-spacing: -.035em; }
-    h1 { margin: 0 0 8px; color: var(--bright); font-size: clamp(34px, 4vw, 50px); line-height: 1.04; text-transform: uppercase; }
+    h1 { margin: 0 0 8px; color: var(--bright); font-size: clamp(34px, 4vw, 50px); line-height: 1.04; text-transform: none; }
+    h1[tabindex="-1"]:focus { outline: 2px solid var(--accent); outline-offset: 6px; }
     .page-description { max-width: 700px; margin: 0; color: var(--secondary); font-size: 13px; }
     .page-kicker { display: flex; align-items: center; gap: 10px; margin-top: 14px; color: var(--muted); font: 9px/1.4 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; }
     .page-kicker .separator { width: 1px; height: 12px; background: var(--edge); }
@@ -112,7 +112,6 @@
     }
     .search-input::placeholder { color: var(--faint); }
     .search-input:focus-visible, select:focus-visible { outline: none; border-color: var(--accent); }
-    .search-shortcut { position: absolute; top: 50%; right: 12px; transform: translateY(-50%); color: var(--faint); font: 9px var(--font-mono); }
     .control-button, .select-control, .action-button {
       display: inline-flex; min-height: 44px; align-items: center; justify-content: center; gap: 8px;
       padding: 0 14px; border: 1px solid var(--edge); border-radius: 4px; background: transparent;
@@ -121,61 +120,55 @@
     .control-button:hover, .select-control:hover, .action-button:hover { border-color: var(--edge); background: var(--raised); color: var(--bright); }
     .control-button.primary, .action-button.primary { border-color: var(--accent); background: var(--accent); color: var(--on-accent); font-weight: 650; }
     .control-button.primary:hover, .action-button.primary:hover { border-color: var(--accent-hover); background: var(--accent-hover); }
-    .filter-strip { display: flex; min-height: 44px; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
-    .filter-chips { display: flex; min-width: 0; gap: 4px; overflow-x: auto; scrollbar-width: thin; }
-    .filter-chip { display: inline-flex; min-height: 40px; align-items: center; gap: 7px; padding: 0 12px; border: 1px solid transparent; background: transparent; color: var(--muted); cursor: pointer; font-size: 11px; white-space: nowrap; }
-    .filter-chip:hover { color: var(--bright); }
-    .filter-chip[aria-pressed="true"] { border-color: var(--hairline); background: var(--active); color: var(--bright); }
-    .filter-chip[aria-pressed="true"]::before { width: 5px; height: 5px; background: var(--accent); content: ""; }
+    .filter-strip { display: flex; min-height: 44px; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+    .mobile-filter-toggle { display: none; }
     .result-count { flex: 0 0 auto; color: var(--faint); font: 9px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; }
-    .draft-list { display: grid; gap: 14px; }
+    .draft-list { display: grid; gap: 0; }
     .draft-card {
-      display: grid; grid-template-columns: minmax(0, 1fr) 114px; gap: 14px; align-items: stretch;
-      min-height: 158px; padding: 8px 0; border: 0; border-radius: 0; background: transparent;
+      min-width: 0; border-bottom: 1px solid var(--hairline);
     }
     .draft-card:hover .draft-title { color: var(--accent-bright); }
     .draft-main {
-      display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 15px; align-items: center; min-width: 0;
-      padding: 0; border: 0; background: transparent; cursor: pointer; text-align: left;
+      display: grid; width: 100%; min-width: 0; min-height: 104px; grid-template-columns: 62px minmax(0, 1fr) 18px;
+      gap: 15px; align-items: center; padding: 12px 4px; border: 0; background: transparent;
+      color: inherit; cursor: pointer; text-align: left;
     }
-    .draft-main:focus-visible { outline-offset: 0; }
+    .draft-main:focus-visible { outline-offset: -2px; }
+    .draft-main::after { color: var(--muted); content: "↗"; font: 13px/1 var(--font-mono); text-align: center; }
+    .draft-main:hover::after, .draft-main:focus-visible::after { color: var(--accent); }
     .document-thumb {
-      position: relative; display: flex; width: 100px; height: 132px; flex-direction: column; overflow: hidden;
-      padding: 13px 10px 8px; border: 1px solid #303536; background: #0b0d0e; color: var(--bright);
+      position: relative; display: flex; width: 62px; height: 78px; flex-direction: column; overflow: hidden;
+      padding: 8px 6px; border: 1px solid var(--edge); background: var(--card); color: var(--bright);
     }
-    .thumb-tag { margin-bottom: 11px; color: var(--muted); font: 6px/1.2 var(--font-mono); letter-spacing: .05em; }
-    .document-thumb strong { display: -webkit-box; overflow: hidden; margin: 0; color: var(--bright); font: 600 8px/1.4 var(--font-ui); -webkit-box-orient: vertical; -webkit-line-clamp: 4; }
-    .document-thumb::after { width: 14px; height: 2px; margin-top: auto; background: var(--accent); content: ""; }
+    .document-thumb strong { display: -webkit-box; overflow: hidden; margin: 0; color: var(--bright); font: 600 7px/1.35 var(--font-ui); -webkit-box-orient: vertical; -webkit-line-clamp: 4; }
+    .document-thumb::after { width: 10px; height: 2px; margin-top: auto; background: var(--accent); content: ""; }
     .draft-copy { min-width: 0; }
-    .draft-eyebrow { display: flex; flex-wrap: wrap; gap: 6px 10px; margin-bottom: 6px; color: var(--muted); font: 9px/1.3 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; }
-    .sample-dot { display: inline-block; width: 5px; height: 5px; align-self: center; background: var(--accent); }
-    .draft-title { display: block; margin-bottom: 6px; color: var(--bright); font: 560 19px/1.2 var(--font-display); letter-spacing: -.025em; }
-    .draft-summary { display: -webkit-box; overflow: hidden; max-width: 640px; margin: 0 0 10px; color: var(--secondary); font-size: 11px; line-height: 1.45; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
-    .draft-meta { display: flex; flex-wrap: wrap; gap: 5px 12px; color: var(--faint); font: 9px/1.4 var(--font-mono); text-transform: uppercase; }
-    .draft-side { display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between; gap: 10px; padding: 2px 2px 2px 0; }
+    .draft-eyebrow { margin-bottom: 3px; color: var(--muted); font: 10px/1.3 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; }
+    .draft-title { display: block; margin-bottom: 3px; color: var(--bright); font: 560 18px/1.2 var(--font-display); letter-spacing: -.025em; }
+    .draft-summary { display: -webkit-box; overflow: hidden; max-width: 640px; margin: 0 0 4px; color: var(--secondary); font-size: 12px; line-height: 1.4; -webkit-box-orient: vertical; -webkit-line-clamp: 1; }
+    .draft-meta { display: flex; flex-wrap: wrap; gap: 5px 12px; color: var(--secondary); font: 10px/1.4 var(--font-mono); }
     .status-tag { display: inline-flex; min-height: 24px; align-items: center; gap: 6px; padding: 3px 7px; border: 1px solid #324137; border-radius: 3px; background: var(--success-tint); color: var(--success); font-size: 9px; line-height: 1.2; text-align: right; white-space: nowrap; }
     .status-tag.local { border-color: #4c4127; background: var(--warning-tint); color: #e0b13a; }
-    .draft-open { min-width: 92px; }
     .empty-state { padding: 44px 20px; border: 1px dashed var(--edge); color: var(--secondary); text-align: center; }
     .empty-state strong { display: block; margin-bottom: 7px; color: var(--bright); font: 560 20px var(--font-display); }
     .filter-panel, .overview-block, .settings-block {
       border: 1px solid var(--hairline); border-radius: 0; background: #090a0b;
     }
-    .filter-panel { position: sticky; top: 92px; padding: 18px 16px 16px; }
+    .filter-panel { position: sticky; top: 92px; padding: 12px 0; border: 0; background: transparent; }
     .panel-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 15px; }
     .panel-heading h2 { margin: 0; color: var(--bright); font: 560 19px/1.2 var(--font-display); }
     .panel-code { color: var(--faint); font: 9px var(--font-mono); letter-spacing: .07em; }
-    .filter-group { margin: 0; padding: 14px 0 0; border: 0; }
-    .filter-group + .filter-group { margin-top: 13px; }
+    .filter-group { margin: 0; padding: 12px 0 0; border: 0; }
+    .filter-group + .filter-group { margin-top: 8px; border-top: 1px solid var(--hairline); }
     .filter-group legend { padding: 0 0 9px; color: var(--secondary); font-size: 11px; font-weight: 600; }
     .check-list { display: grid; gap: 4px; }
-    .check-row { display: flex; min-height: 36px; align-items: center; gap: 9px; color: var(--muted); cursor: pointer; font-size: 11px; }
+    .check-row { display: flex; min-height: 44px; align-items: center; gap: 9px; color: var(--muted); cursor: pointer; font-size: 12px; }
     .check-row:hover { color: var(--bright); }
     .check-row input { width: 15px; height: 15px; margin: 0; accent-color: var(--accent); }
     .check-count { margin-left: auto; color: var(--faint); font: 9px var(--font-mono); }
     .select-control { width: 100%; justify-content: space-between; padding: 0 10px; background: var(--ground); }
     .filter-note { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--hairline); color: var(--faint); font-size: 10px; line-height: 1.5; }
-    .sample-note { margin-top: 13px; padding: 11px 12px; border-left: 2px solid var(--accent); background: var(--active); color: var(--secondary); font-size: 10px; line-height: 1.5; }
+    .sample-note { margin-top: 13px; padding: 8px 0 0 12px; border-left: 1px solid var(--accent); background: transparent; color: var(--secondary); font-size: 11px; line-height: 1.5; }
     .sample-note strong { color: var(--bright); font-weight: 600; }
     .section-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin: 0 0 22px; }
     .section-heading h1 { margin-bottom: 8px; }
@@ -195,14 +188,20 @@
     .event-row strong { display: block; color: var(--body); font-size: 11px; font-weight: 500; }
     .event-row small { color: var(--faint); font: 8px var(--font-mono); text-transform: uppercase; }
     .overview-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
-    .settings-list { margin-top: 16px; }
-    .setting-row { display: grid; grid-template-columns: minmax(160px, .7fr) 1.3fr; gap: 18px; padding: 14px 0; border-top: 1px solid var(--hairline); }
+    .settings-list { margin-top: 4px; }
+    .setting-row { display: grid; grid-template-columns: minmax(160px, .7fr) 1.3fr; gap: 18px; padding: 16px 0; border-top: 1px solid var(--hairline); }
     .setting-name { color: var(--bright); font-size: 12px; font-weight: 600; }
     .setting-name code { display: block; margin-top: 4px; color: var(--faint); font: 9px var(--font-mono); overflow-wrap: anywhere; }
     .setting-value { color: var(--body); font-size: 11px; }
     .setting-value small { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; }
     .settings-block { padding: 8px 16px 16px; }
-    .reference-pill { display: inline-flex; min-height: 23px; align-items: center; padding: 3px 7px; border: 1px solid var(--edge); color: var(--accent-bright); font: 9px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; }
+    .setting-field-label { display: block; margin-bottom: 7px; color: var(--secondary); font-size: 11px; }
+    .setting-input, .setting-textarea { width: 100%; border: 1px solid var(--edge); border-radius: 0; background: var(--ground); color: var(--bright); font: 12px var(--font-ui); }
+    .setting-input { min-height: 44px; padding: 0 12px; }
+    .setting-textarea { min-height: 126px; padding: 12px; resize: vertical; line-height: 1.55; }
+    .setting-input:focus-visible, .setting-textarea:focus-visible { outline: none; border-color: var(--accent); }
+    .settings-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding-top: 14px; border-top: 1px solid var(--hairline); }
+    .settings-save-status { min-height: 20px; color: var(--secondary); font-size: 11px; }
 
     .document-workspace, .editor-workspace { min-height: 100vh; background: #111315; }
     .doc-toolbar {
@@ -299,12 +298,16 @@
       .workspace-label, .nav-bottom { display: none; }
       .nav-items { display: grid; gap: 4px; overflow: visible; }
       .nav-item { width: 52px; min-width: 52px; min-height: 52px; flex-direction: column; justify-content: center; gap: 2px; padding: 3px 1px; font-size: 0; }
-      .nav-label { position: static; width: auto; height: auto; overflow: visible; clip: auto; color: var(--secondary); font: 7px/1.1 var(--font-mono); letter-spacing: -.03em; text-align: center; white-space: normal; }
+      .nav-label { position: static; width: 52px; height: auto; overflow: visible; clip: auto; color: var(--secondary); font: 9px/1.15 var(--font-ui); letter-spacing: 0; text-align: center; white-space: normal; }
       .nav-item[aria-current="page"]::before { top: 7px; right: auto; bottom: 7px; left: -1px; width: 2px; height: auto; }
       .filter-column { grid-column: 2; }
-      .filter-panel { grid-template-columns: 1fr; gap: 12px; }
+      .filter-panel { position: static; grid-template-columns: 1fr; gap: 8px; }
+      .filter-column[data-mobile-collapsed="true"] { display: none; }
+      .mobile-filter-toggle { display: inline-flex; min-height: 44px; align-items: center; gap: 8px; padding: 0 12px; border: 1px solid var(--edge); background: transparent; color: var(--body); cursor: pointer; font-size: 12px; }
+      .mobile-filter-toggle:hover, .mobile-filter-toggle[aria-expanded="true"] { border-color: var(--accent); color: var(--bright); }
+      .mobile-filter-toggle::before { color: var(--accent); content: "≡"; font: 16px var(--font-mono); }
       .panel-heading, .filter-note { grid-column: 1; }
-      .filter-group, .filter-group + .filter-group { padding-top: 12px; }
+      .filter-group, .filter-group + .filter-group { padding-top: 8px; }
       .app-footer { padding: 0 18px 22px; }
       .reader-layout { grid-template-columns: minmax(0, 1fr); }
       .reader-sidebar { display: block; padding: 14px 16px; border-right: 0; border-bottom: 1px solid var(--hairline); background: #08090b; }
@@ -344,21 +347,15 @@
       .search-row .control-button { width: 44px; padding: 0; font-size: 0; }
       .search-row .control-button::before { content: "↵"; font: 15px var(--font-mono); }
       .search-input { min-height: 46px; font-size: 16px; }
-      .search-shortcut { display: none; }
-      .filter-strip { align-items: flex-start; flex-direction: column; gap: 5px; margin-bottom: 12px; }
-      .filter-chips { width: 100%; }
-      .filter-chip { min-height: 40px; padding: 0 10px; font-size: 10px; }
-      .result-count { padding-left: 3px; }
-      .draft-card { grid-template-columns: minmax(0,1fr); gap: 9px; min-height: 0; padding: 12px 0; }
-      .draft-main { grid-template-columns: 75px minmax(0,1fr); gap: 11px; }
-      .document-thumb { width: 75px; height: 104px; padding: 9px 7px 6px; }
-      .thumb-tag { margin-bottom: 8px; font-size: 5px; }
+      .filter-strip { gap: 8px; margin-bottom: 2px; }
+      .mobile-filter-toggle { padding: 0 10px; }
+      .result-count { font-size: 9px; }
+      .draft-main { min-height: 88px; grid-template-columns: 44px minmax(0,1fr) 14px; gap: 10px; padding: 10px 2px; }
+      .document-thumb { width: 44px; height: 58px; padding: 6px 4px; }
       .document-thumb strong { font-size: 6px; }
-      .draft-title { font-size: 16px; }
-      .draft-summary { margin-bottom: 7px; font-size: 10px; }
-      .draft-meta, .draft-eyebrow { font-size: 8px; }
-      .draft-side { flex-direction: row; align-items: center; padding-left: 86px; }
-      .draft-open { min-width: 104px; min-height: 44px; }
+      .draft-eyebrow, .draft-meta { font-size: 9px; }
+      .draft-title { margin-bottom: 3px; font-size: 16px; }
+      .draft-summary { margin-bottom: 3px; font-size: 11px; }
       .overview-grid { grid-template-columns: 1fr; }
       .overview-block { padding: 16px; }
       .section-heading { align-items: flex-start; flex-direction: column; gap: 8px; }
@@ -376,17 +373,17 @@
       .mobile-details .eyebrow { margin: 0; font-size: 8px; }
       .paper, .editor-paper { padding: 31px 22px 42px; }
       .paper-topline { margin-bottom: 21px; font-size: 7px; }
-      .document-copy { font-size: 13px; line-height: 1.7; }
-      .document-copy h1, .editable-content h1 { font-size: 22px; }
-      .document-copy h2, .editable-content h2 { font-size: 14px; }
-      .paper-deck { margin-bottom: 25px !important; font-size: 10px; }
+      .document-copy { font-size: 15px; line-height: 1.7; }
+      .document-copy h1, .editable-content h1 { font-size: 23px; }
+      .document-copy h2, .editable-content h2 { font-size: 15px; }
+      .paper-deck { margin-bottom: 25px !important; font-size: 11px; }
       .reader-canvas { padding: 12px 9px 34px; }
       .format-toolbar { min-height: 56px; top: 60px; gap: 5px; padding: 5px 7px; }
       .format-tools { gap: 1px; }
       .format-button { width: 42px; min-height: 44px; }
       .word-count { max-width: 70px; font-size: 8px; white-space: normal; text-align: right; }
       .editor-canvas { padding-bottom: 106px; }
-      .editable-content { min-height: 560px; font-size: 14px; }
+      .editable-content { min-height: 560px; font-size: 15px; }
       .save-status, #save-draft { display: none; }
       .mobile-savebar {
         position: fixed; z-index: 9; right: 0; bottom: 0; left: 0; display: flex; min-height: 68px; align-items: center; justify-content: space-between; gap: 12px;
@@ -417,7 +414,7 @@
         <span class="brand-copy"><span class="wordmark">iBacalao</span><span class="brand-separator" aria-hidden="true"></span><span class="product-label">Homework Agent</span></span>
       </a>
       <div class="header-right">
-        <span class="header-context"><span class="live-dot" aria-hidden="true"></span>Static preview · no agent connection</span>
+        <span class="header-context">Interactive sample workspace</span>
         <span class="sample-stamp">Sample workspace</span>
       </div>
     </header>
@@ -433,7 +430,7 @@
             <button class="nav-item" type="button" data-section="settings" aria-label="Settings"><span class="nav-glyph" aria-hidden="true">⚙</span><span class="nav-label">Settings</span></button>
           </div>
         </nav>
-        <div class="nav-bottom"><strong>Preview environment</strong><span>Sample content only<br>No live draft access</span></div>
+        <div class="nav-bottom"><strong>Sample workspace</strong><span>4 example drafts<br>Edits stay in browser</span></div>
       </aside>
 
       <main class="main-column">
@@ -442,66 +439,71 @@
             <p class="eyebrow">Homework Agent / Draft Review</p>
             <h1 id="page-title" tabindex="-1">Saved drafts</h1>
             <p class="page-description">Review sample documents prepared for you. Open a page to read it, then edit a browser-local copy.</p>
-            <div class="page-kicker"><span>Draft library</span><span class="separator" aria-hidden="true"></span><span>Sample records · not connected</span></div>
+            <div class="page-kicker"><span>Draft library</span><span class="separator" aria-hidden="true"></span><span>Four sample drafts</span></div>
           </div>
           <div class="search-row">
             <label class="search-wrap">
               <span class="search-icon" aria-hidden="true">⌕</span>
               <input class="search-input" id="draft-search" type="search" placeholder="Search drafts, subjects, or assignment titles" autocomplete="off" aria-label="Search sample drafts">
-              <span class="search-shortcut" aria-hidden="true">/</span>
             </label>
             <button class="control-button" type="button" id="clear-search" aria-label="Clear search">Clear</button>
           </div>
           <div class="filter-strip">
-            <div class="filter-chips" role="group" aria-label="Quick draft filters">
-              <button class="filter-chip" type="button" data-quick-filter="all" aria-pressed="true">All drafts</button>
-              <button class="filter-chip" type="button" data-quick-filter="ready" aria-pressed="false">Ready for review</button>
-              <button class="filter-chip" type="button" data-quick-filter="edited" aria-pressed="false">Edited locally</button>
-            </div>
+            <button class="mobile-filter-toggle" id="mobile-filter-toggle" type="button" aria-expanded="false" aria-controls="filter-column">Filters</button>
             <span class="result-count" id="result-count" aria-live="polite">0 SAMPLE DRAFTS</span>
           </div>
           <div class="draft-list" id="draft-list" aria-label="Sample homework drafts"></div>
-          <div class="sample-note"><strong>Sample data.</strong> The CLI/MCP agent can create a ready-for-review HTML artifact, but this repository has no browser endpoint to fetch drafts.</div>
+          <div class="sample-note"><strong>Sample workspace.</strong> Open a draft to read it, then edit a copy in this browser.</div>
         </section>
 
         <section id="page-overview" data-home-page aria-labelledby="overview-title" hidden>
           <div class="section-heading">
-            <div><p class="eyebrow">Homework Agent / Overview</p><h1 id="overview-title" tabindex="-1">Agent activity</h1><p class="page-description">A compact view of the local worker flow and the sample review queue.</p></div>
-            <span class="section-mark">SAMPLE STATE · NO LIVE FEED</span>
+            <div><p class="eyebrow">Homework Agent / Overview</p><h1 id="overview-title" tabindex="-1">How draft review works</h1><p class="page-description">A guide to the CLI/MCP artifact flow, from agent output to student review.</p></div>
+            <span class="section-mark">WORKFLOW OVERVIEW</span>
           </div>
           <div class="overview-grid">
             <section class="overview-block">
-              <p class="eyebrow">Worker state / sample</p>
-              <h2>Waiting for an assignment</h2>
-              <p>This preview does not start or inspect an agent process.</p>
-              <div class="overview-line"><span>Sample library</span><strong>4 example drafts</strong></div>
+              <p class="eyebrow">Artifact output</p>
+              <h2>Review the generated HTML</h2>
+              <p>The local agent sends generated HTML to the configured iBacalao server, where the student can review and edit the draft.</p>
+              <div class="overview-line"><span>Included here</span><strong>4 sample documents</strong></div>
               <div class="overview-actions"><button class="action-button primary" type="button" data-go-review>Browse drafts</button></div>
             </section>
             <section class="overview-block">
-              <p class="eyebrow">Process summary / reference</p>
+              <p class="eyebrow">What happens next</p>
               <div class="event-list">
-                <div class="event-row"><span class="event-index">01</span><div><strong>Claim an assignment job</strong><small>CLI / MCP agent</small></div><small>STEP</small></div>
-                <div class="event-row"><span class="event-index">02</span><div><strong>Generate a draft</strong><small>Chosen model endpoint</small></div><small>STEP</small></div>
-                <div class="event-row"><span class="event-index">03</span><div><strong>Save for your review</strong><small>School platform unchanged</small></div><small>STEP</small></div>
+                <div class="event-row"><span class="event-index">01</span><div><strong>Agent creates an artifact</strong><small>CLI / MCP job</small></div><small>STEP</small></div>
+                <div class="event-row"><span class="event-index">02</span><div><strong>Student reads the draft</strong><small>Review the saved draft in iBacalao</small></div><small>STEP</small></div>
+                <div class="event-row"><span class="event-index">03</span><div><strong>Student decides what to do next</strong><small>No automatic submission</small></div><small>STEP</small></div>
               </div>
             </section>
           </div>
-          <div class="sample-note"><strong>Preview boundary.</strong> Status and activity shown here are illustrative sample text, not observations from a running agent.</div>
+          <div class="sample-note"><strong>Sample workspace.</strong> Browse the included drafts in Draft Review.</div>
         </section>
 
         <section id="page-settings" data-home-page aria-labelledby="settings-title" hidden>
           <div class="section-heading">
-            <div><p class="eyebrow">Homework Agent / Settings</p><h1 id="settings-title" tabindex="-1">Configuration reference</h1><p class="page-description">The CLI/MCP worker reads configuration from its process environment. This static preview cannot inspect or change it.</p></div>
-            <span class="reference-pill">Reference only</span>
+            <div><p class="eyebrow">Homework Agent / Settings</p><h1 id="settings-title" tabindex="-1">Agent settings</h1><p class="page-description">Preview the model name and writing-instruction fields. The Ping Bot keeps its model endpoint and API key on your computer.</p></div>
           </div>
           <section class="settings-block">
-            <div class="settings-list">
-              <div class="setting-row"><div class="setting-name">iBacalao server<code>IBACALAO_BASE_URL</code></div><div class="setting-value">Read by the agent process<small>This preview does not connect to the API.</small></div></div>
-              <div class="setting-row"><div class="setting-name">Agent token<code>IBACALAO_AGENT_TOKEN</code></div><div class="setting-value">Secret value is not shown<small>Never enter a token in this static preview.</small></div></div>
-              <div class="setting-row"><div class="setting-name">Model endpoint<code>IBACALAO_LLM_BASE_URL</code></div><div class="setting-value">Selected in the local environment<small>API mode uses the endpoint chosen for the agent process.</small></div></div>
-              <div class="setting-row"><div class="setting-name">Model name<code>IBACALAO_LLM_MODEL</code></div><div class="setting-value">Configured at launch<small>This preview cannot report the active model.</small></div></div>
-              <div class="setting-row"><div class="setting-name">Polling interval<code>IBACALAO_AGENT_POLL_MS</code></div><div class="setting-value">Configured at launch<small>Shown here as a setting reference only.</small></div></div>
-            </div>
+            <form class="settings-list" id="sample-settings-form">
+              <div class="setting-row">
+                <div class="setting-name">Model name<code>Optional model preference</code></div>
+                <div class="setting-value"><label class="setting-field-label" for="sample-model-name">Model identifier</label><input class="setting-input" id="sample-model-name" name="modelName" maxlength="160" placeholder="Use the Ping Bot's local default" autocomplete="off"><small>In the live setup, leaving this blank uses the Ping Bot's configured model.</small></div>
+              </div>
+              <div class="setting-row">
+                <div class="setting-name">Writing instructions<code>Student preference</code></div>
+                <div class="setting-value"><label class="setting-field-label" for="sample-student-instructions">Instructions for new drafts</label><textarea class="setting-textarea" id="sample-student-instructions" name="studentInstructions" maxlength="12000" placeholder="Use these headings… Include these sources… Write in British English…"></textarea><small>This sample field does not change generated drafts.</small></div>
+              </div>
+              <div class="setting-row">
+                <div class="setting-name">Model connection</div>
+                <div class="setting-value">Configured on your Ping Bot computer<small>The endpoint address and API key stay there. They are never entered here.</small></div>
+              </div>
+              <div class="settings-actions">
+                <span class="settings-save-status" id="sample-settings-status" role="status" aria-live="polite">Sample only · changes stay in this browser.</span>
+                <button class="action-button primary" type="submit">Save settings</button>
+              </div>
+            </form>
           </section>
         </section>
       </main>
@@ -512,8 +514,8 @@
           <fieldset class="filter-group">
             <legend>Status</legend>
             <div class="check-list">
-              <label class="check-row"><input type="checkbox" value="ready" data-status-check checked><span>Ready for review</span><span class="check-count" data-status-count="ready">03</span></label>
-              <label class="check-row"><input type="checkbox" value="edited" data-status-check checked><span>Edited locally</span><span class="check-count" data-status-count="edited">01</span></label>
+              <label class="check-row"><input type="checkbox" value="sample" data-status-check checked><span>Sample drafts</span><span class="check-count" data-status-count="sample">04</span></label>
+              <label class="check-row"><input type="checkbox" value="edited" data-status-check checked><span>Edited in this browser</span><span class="check-count" data-status-count="edited">00</span></label>
             </div>
           </fieldset>
           <fieldset class="filter-group">
@@ -537,7 +539,7 @@
         </section>
       </aside>
     </div>
-    <footer class="app-footer"><strong>iBacalao Homework Agent · Sample preview.</strong> No agent connection, saved-draft retrieval, or school-platform action is available here.</footer>
+    <footer class="app-footer"><strong>iBacalao Homework Agent · Sample preview.</strong> Four example drafts for browsing and editing.</footer>
   </div>
 
   <main id="reader-shell" class="document-workspace" hidden>
@@ -564,8 +566,7 @@
         <dl class="detail-list">
           <div class="detail-block"><dt>Assignment</dt><dd id="detail-title">Sample assignment</dd></div>
           <div class="detail-block"><dt>Course</dt><dd id="detail-course">Sample subject</dd></div>
-          <div class="detail-block"><dt>Sample record</dt><dd id="detail-id">sample-job-001</dd></div>
-          <div class="detail-block"><dt>Document state</dt><dd id="detail-status">Ready for review · sample</dd></div>
+          <div class="detail-block"><dt>Document state</dt><dd id="detail-status">Sample draft</dd></div>
           <div class="detail-block"><dt>Draft source</dt><dd>Example text included with this static preview</dd></div>
         </dl>
         <div class="reader-boundary"><strong>Local sample only</strong>Reading and editing here do not retrieve or update an agent draft. Nothing is sent to a school platform.</div>
@@ -639,8 +640,8 @@
         html: '<h1>Memory and narrative voice</h1><p class="paper-deck">A sample comparative response · English A</p><p>This sample explores how a narrator’s perspective can shape the way a reader understands memory. The account of an event may shift through omission, emphasis, or reflection, so the telling becomes part of the meaning.</p><h2>Comparative focus</h2><p>A comparison could examine where each speaker appears certain and where hesitation enters the narration. Attention to pronouns, shifts in tense, and repeated images may show how the narrators position themselves in relation to the past.</p><h2>Developing the response</h2><p>Rather than treating memory as a complete record, the discussion can consider what each voice selects and leaves unstated. A close reading of a short passage would help connect those choices to tone and structure.</p><p>This document is sample interface content. It does not describe assigned texts or a real student’s submitted work.</p>'
       },
       {
-        id: "sample-job-117", course: "History HL", title: "Changing accounts of migration policy", status: "edited", updated: 2,
-        summary: "A browser-edited sample note comparing the purpose and limits of two historical sources.",
+        id: "sample-job-117", course: "History HL", title: "Changing accounts of migration policy", status: "ready", updated: 2,
+        summary: "A sample note comparing the purpose and limits of two historical sources.",
         assignment: "Compare the purpose and limits of two sources on migration policy.",
         html: '<h1>Changing accounts of migration policy</h1><p class="paper-deck">A sample source analysis · History HL</p><p>This sample draft compares two hypothetical sources that discuss a change in migration policy. The first source could provide an official explanation, while the second might record the perspective of a community organisation.</p><h2>Source context</h2><p>Each source should be considered in relation to its author, audience, and purpose. An official statement may clarify the policy rationale but give limited attention to local effects. A community account may foreground lived experience while representing a narrower range of views.</p><h2>Comparison focus</h2><p>A balanced analysis can identify both the information each source offers and the questions it cannot answer alone. Additional evidence would be needed before drawing conclusions about the policy’s effects.</p><p>Example content only. No real sources or verified historical findings are represented here.</p>'
       },
@@ -653,10 +654,14 @@
     ];
 
     const storageKey = "ibacalao-homework-preview-edits-v1";
+    const preferencesStorageKey = "ibacalao-homework-preview-preferences-v1";
     const homeShell = document.getElementById("home-shell");
     const readerShell = document.getElementById("reader-shell");
     const editorShell = document.getElementById("editor-shell");
     const filterColumn = document.getElementById("filter-column");
+    const filterToggle = document.getElementById("mobile-filter-toggle");
+    const filterStrip = document.querySelector(".filter-strip");
+    const appLayout = document.querySelector(".app-layout");
     const draftList = document.getElementById("draft-list");
     const searchInput = document.getElementById("draft-search");
     const resultCount = document.getElementById("result-count");
@@ -664,14 +669,18 @@
     const readerContent = document.getElementById("reader-content");
     const saveStatus = document.getElementById("save-status");
     const mobileSaveStatus = document.getElementById("mobile-save-status");
+    const modelNameInput = document.getElementById("sample-model-name");
+    const studentInstructionsInput = document.getElementById("sample-student-instructions");
+    const settingsStatus = document.getElementById("sample-settings-status");
     const discardDialog = document.getElementById("discard-dialog");
     const zoomReadout = document.getElementById("zoom-readout");
     let storedEdits = readStoredEdits();
     let activeSection = "draft-review";
     let currentView = "home";
-    let currentDocument = documents[0];
+    let currentDocument = null;
     let savedHtml = "";
     let zoom = 100;
+    let filtersCompact = null;
 
     function readStoredEdits() {
       try {
@@ -680,6 +689,26 @@
       } catch {
         return {};
       }
+    }
+
+    function readStoredPreferences() {
+      try {
+        const parsed = JSON.parse(window.localStorage.getItem(preferencesStorageKey) || "{}");
+        if (!parsed || typeof parsed !== "object") return {};
+        return {
+          modelName: typeof parsed.modelName === "string" ? parsed.modelName : "",
+          studentInstructions: typeof parsed.studentInstructions === "string" ? parsed.studentInstructions : "",
+        };
+      } catch {
+        return {};
+      }
+    }
+
+    const storedPreferences = readStoredPreferences();
+    modelNameInput.value = storedPreferences.modelName;
+    studentInstructionsInput.value = storedPreferences.studentInstructions;
+    if (storedPreferences.modelName || storedPreferences.studentInstructions) {
+      settingsStatus.textContent = "Sample only · changes stay in this browser.";
     }
 
     function sanitizeHtml(html) {
@@ -719,7 +748,6 @@
     function makeThumb(doc) {
       const thumb = node("span", "document-thumb");
       thumb.setAttribute("aria-hidden", "true");
-      thumb.appendChild(node("span", "thumb-tag", doc.course + " · SAMPLE"));
       thumb.appendChild(node("strong", "", doc.assignment));
       return thumb;
     }
@@ -733,29 +761,13 @@
       mainButton.appendChild(makeThumb(doc));
 
       const copy = node("span", "draft-copy");
-      const eyebrow = node("span", "draft-eyebrow");
-      eyebrow.appendChild(node("span", "sample-dot"));
-      eyebrow.appendChild(document.createTextNode(doc.course + "  /  " + doc.id));
-      copy.appendChild(eyebrow);
+      copy.appendChild(node("span", "draft-eyebrow", doc.course));
       copy.appendChild(node("span", "draft-title", doc.title));
       copy.appendChild(node("span", "draft-summary", doc.summary));
-      const meta = node("span", "draft-meta");
-      meta.appendChild(node("span", "", "Sample document"));
-      meta.appendChild(node("span", "", "Not submitted"));
-      copy.appendChild(meta);
+      const edited = draftStatus(doc) === "edited";
+      if (edited) copy.appendChild(node("span", "draft-meta", "Edited in this browser"));
       mainButton.appendChild(copy);
       card.appendChild(mainButton);
-
-      const side = node("div", "draft-side");
-      const edited = draftStatus(doc) === "edited";
-      const status = node("span", "status-tag" + (edited ? " local" : ""), edited ? "Edited in browser" : "Ready for review");
-      side.appendChild(status);
-      const openButton = node("button", "action-button primary draft-open", "Open");
-      openButton.type = "button";
-      openButton.setAttribute("data-open-doc", doc.id);
-      openButton.setAttribute("aria-label", "Open " + doc.title);
-      side.appendChild(openButton);
-      card.appendChild(side);
       return card;
     }
 
@@ -764,14 +776,13 @@
     }
 
     function draftStatus(doc) {
-      return storedEdits[doc.id] ? "edited" : doc.status;
+      return storedEdits[doc.id] ? "edited" : "sample";
     }
 
     function renderDrafts() {
       const query = searchInput.value.trim().toLowerCase();
       const statuses = selectedValues("[data-status-check]");
       const subjects = selectedValues("[data-subject-check]");
-      const quick = document.querySelector("[data-quick-filter][aria-pressed='true']").dataset.quickFilter;
       const sort = document.getElementById("sort-drafts").value;
       document.querySelectorAll("[data-status-count]").forEach(function (count) {
         count.textContent = String(documents.filter(function (doc) { return draftStatus(doc) === count.dataset.statusCount; }).length).padStart(2, "0");
@@ -779,7 +790,7 @@
       let matches = documents.filter(function (doc) {
         const searchable = (doc.title + " " + doc.course + " " + doc.summary + " " + doc.assignment).toLowerCase();
         const status = draftStatus(doc);
-        const statusMatches = statuses.includes(status) && (quick === "all" || quick === status);
+        const statusMatches = statuses.includes(status);
         return statusMatches && subjects.includes(doc.course) && searchable.includes(query);
       });
       matches.sort(function (a, b) {
@@ -806,15 +817,34 @@
       });
       document.querySelectorAll("[data-home-page]").forEach(function (page) { page.hidden = page.id !== "page-" + section; });
       filterColumn.hidden = section !== "draft-review";
+      if (section !== "draft-review" && filtersCompact) {
+        filterColumn.dataset.mobileCollapsed = "true";
+        filterToggle.setAttribute("aria-expanded", "false");
+      }
       currentView = "home";
       homeShell.hidden = false;
       readerShell.hidden = true;
       editorShell.hidden = true;
+      syncBeforeUnloadGuard();
       window.scrollTo(0, 0);
       if (focusHeading) {
         const heading = document.querySelector("#page-" + section + " h1");
         if (heading) heading.focus();
       }
+    }
+
+    function syncFilterPlacement() {
+      const compact = window.matchMedia("(max-width: 800px)").matches;
+      if (compact === filtersCompact) return;
+      filtersCompact = compact;
+      if (compact) {
+        filterStrip.after(filterColumn);
+        filterColumn.dataset.mobileCollapsed = "true";
+      } else {
+        appLayout.appendChild(filterColumn);
+        delete filterColumn.dataset.mobileCollapsed;
+      }
+      filterToggle.setAttribute("aria-expanded", "false");
     }
 
     function getDocument(id) {
@@ -828,13 +858,12 @@
       editorShell.hidden = true;
       readerShell.hidden = false;
       document.getElementById("reader-title").textContent = currentDocument.title;
-      document.getElementById("reader-meta").textContent = currentDocument.course.toUpperCase() + " · " + currentDocument.id.toUpperCase() + " · SAMPLE";
+      document.getElementById("reader-meta").textContent = currentDocument.course.toUpperCase() + " · SAMPLE";
       document.getElementById("detail-title").textContent = currentDocument.title;
       document.getElementById("detail-course").textContent = currentDocument.course + " · sample";
-      document.getElementById("detail-id").textContent = currentDocument.id;
-      document.getElementById("detail-status").textContent = (draftStatus(currentDocument) === "edited" ? "Edited in this browser" : "Ready for review") + " · sample";
+      document.getElementById("detail-status").textContent = draftStatus(currentDocument) === "edited" ? "Edited in this browser" : "Sample draft";
       document.getElementById("mobile-detail-title").textContent = currentDocument.title;
-      document.getElementById("mobile-detail-course").textContent = currentDocument.course + " · " + currentDocument.id;
+      document.getElementById("mobile-detail-course").textContent = currentDocument.course + " · sample draft";
       document.getElementById("paper-course").textContent = currentDocument.course.toUpperCase() + " · SAMPLE COPY";
       readerContent.innerHTML = htmlFor(currentDocument);
       const paperCopy = readerContent;
@@ -842,6 +871,7 @@
       zoomReadout.textContent = zoom + "%";
       window.scrollTo(0, 0);
       readerShell.querySelector("[data-back-to-drafts]").focus();
+      syncBeforeUnloadGuard();
     }
 
     function setSaveStatus(message, state) {
@@ -863,6 +893,17 @@
       if (dirty) setSaveStatus("Unsaved changes · browser only", "dirty");
       else if (storedEdits[currentDocument.id]) setSaveStatus("Saved in this browser", "saved");
       else setSaveStatus("Sample text · not saved", "clean");
+      syncBeforeUnloadGuard();
+    }
+
+    function protectUnsavedChanges(event) {
+      event.preventDefault();
+      event.returnValue = "";
+    }
+
+    function syncBeforeUnloadGuard() {
+      if (!editorShell.hidden && isDirty()) window.addEventListener("beforeunload", protectUnsavedChanges);
+      else window.removeEventListener("beforeunload", protectUnsavedChanges);
     }
 
     function updateWordCount() {
@@ -901,6 +942,7 @@
       }
       readerContent.innerHTML = html;
       setSaveStatus(storageWorked ? "Saved in this browser · sample only" : "Saved for this session · storage unavailable", "saved");
+      syncBeforeUnloadGuard();
       renderDrafts();
     }
 
@@ -916,7 +958,8 @@
     document.querySelectorAll("[data-section]").forEach(function (button) {
       button.addEventListener("click", function () {
         if (button.dataset.section === "edit-draft") {
-          openEditor(currentDocument);
+          if (currentDocument) openEditor(currentDocument);
+          else activateSection("draft-review", true);
           return;
         }
         activateSection(button.dataset.section, true);
@@ -928,14 +971,32 @@
     document.querySelectorAll("[data-home-link]").forEach(function (link) {
       link.addEventListener("click", function (event) { event.preventDefault(); activateSection("draft-review", true); });
     });
-    document.querySelectorAll("[data-quick-filter]").forEach(function (button) {
-      button.addEventListener("click", function () {
-        document.querySelectorAll("[data-quick-filter]").forEach(function (item) { item.setAttribute("aria-pressed", String(item === button)); });
-        renderDrafts();
-      });
+    filterToggle.addEventListener("click", function () {
+      const expanded = filterColumn.dataset.mobileCollapsed === "true";
+      filterColumn.dataset.mobileCollapsed = String(!expanded);
+      filterToggle.setAttribute("aria-expanded", String(expanded));
     });
+    window.addEventListener("resize", syncFilterPlacement);
     document.querySelectorAll("[data-status-check], [data-subject-check]").forEach(function (input) { input.addEventListener("change", renderDrafts); });
     document.getElementById("sort-drafts").addEventListener("change", renderDrafts);
+    document.getElementById("sample-settings-form").addEventListener("submit", function (event) {
+      event.preventDefault();
+      const modelName = modelNameInput.value.trim();
+      if (modelName.length > 160 || /[\u0000-\u001f\u007f]/.test(modelName)) {
+        settingsStatus.textContent = "Enter a valid model name, up to 160 characters.";
+        modelNameInput.focus();
+        return;
+      }
+      try {
+        window.localStorage.setItem(preferencesStorageKey, JSON.stringify({
+          modelName,
+          studentInstructions: studentInstructionsInput.value,
+        }));
+        settingsStatus.textContent = "Sample settings saved in this browser only.";
+      } catch {
+        settingsStatus.textContent = "Could not save settings in this browser.";
+      }
+    });
     searchInput.addEventListener("input", renderDrafts);
     document.getElementById("clear-search").addEventListener("click", function () {
       searchInput.value = "";
@@ -984,12 +1045,6 @@
       openReader(currentDocument);
     });
     discardDialog.addEventListener("close", function () { if (currentView === "editor") editor.focus(); });
-    window.addEventListener("beforeunload", function (event) {
-      if (!editorShell.hidden && isDirty()) {
-        event.preventDefault();
-        event.returnValue = "";
-      }
-    });
     document.addEventListener("keydown", function (event) {
       if (!editorShell.hidden && (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
         event.preventDefault();
@@ -1014,6 +1069,7 @@
       }
     });
 
+    syncFilterPlacement();
     renderDrafts();
     activateSection("draft-review", false);
   </script>

@@ -58,6 +58,8 @@ The scripts read environment variables from the process; they do not load `.env`
 
 `IBACALAO_LLM_MAX_TOKENS` caps output per draft so a bad job cannot run up your bill.
 
+For the local Ping Bot, an optional model name in iBacalao's Homework settings overrides `IBACALAO_LLM_MODEL` for that job. Student writing instructions are included in the prompt by iBacalao. The model endpoint address and API key stay in the Ping Bot's local environment; leaving the model setting blank uses the local model value (or `gpt-4o-mini`).
+
 The API worker prints its current state without logging assignment titles. For example:
 
 ```text
