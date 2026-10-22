@@ -178,6 +178,20 @@
     .section-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin: 0 0 22px; }
     .section-heading h1 { margin-bottom: 8px; }
     .section-heading .page-description { max-width: 670px; }
+    .section-mark { color: var(--accent); font: 10px var(--font-mono); letter-spacing: .1em; white-space: nowrap; }
+    .overview-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(240px, .9fr); gap: 12px; }
+    .overview-block { border: 1px solid var(--hairline); padding: 20px; background: var(--card); }
+    .overview-block h2 { margin: 6px 0 9px; color: var(--bright); font-size: 24px; line-height: 1.15; }
+    .overview-block p { margin: 0; color: var(--secondary); font-size: 12px; }
+    .overview-line { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 14px 0; padding: 12px 0; border-top: 1px solid var(--hairline); border-bottom: 1px solid var(--hairline); }
+    .overview-line span { color: var(--muted); font-size: 11px; }
+    .overview-line strong { color: var(--accent-bright); font: 10px var(--font-mono); text-transform: uppercase; }
+    .event-list { margin-top: 5px; }
+    .event-row { display: grid; grid-template-columns: 26px minmax(0,1fr) auto; gap: 10px; align-items: center; padding: 12px 0; border-top: 1px solid var(--hairline); }
+    .event-index { color: var(--accent); font: 10px var(--font-mono); }
+    .event-row strong { display: block; color: var(--body); font-size: 11px; font-weight: 500; }
+    .event-row small { color: var(--faint); font: 8px var(--font-mono); text-transform: uppercase; }
+    .overview-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
     .settings-list { margin-top: 4px; }
     .setting-row { display: grid; grid-template-columns: minmax(160px, .7fr) 1.3fr; gap: 18px; padding: 16px 0; border-top: 1px solid var(--hairline); }
     .setting-name { color: var(--bright); font-size: 12px; font-weight: 600; }
@@ -258,7 +272,6 @@
     #editor-font-size { width: 62px; }
     .word-count { color: #5f6368; font: 10px var(--font-mono); letter-spacing: .02em; white-space: nowrap; }
     .editor-canvas { width: 100%; margin: 0 auto; padding: 20px 20px 64px; overflow: auto; background: var(--document-canvas); }
-    .editor-ruler { display: flex; width: min(816px, 100%); height: 28px; align-items: center; justify-content: space-evenly; margin: 0 auto 8px; padding: 0 9%; border: 1px solid #dadce0; background-color: #fff; background-image: repeating-linear-gradient(90deg, transparent 0, transparent 39px, #dadce0 40px); color: #70757a; font: 10px Arial, sans-serif; }
     .editor-paper {
       width: min(100%, 816px); min-height: 1056px; margin: 0 auto; padding: 96px;
       border: 1px solid #dadce0; background: #fff; color: #202124; box-shadow: 0 1px 3px rgb(60 64 67 / 18%);
@@ -304,6 +317,8 @@
       .panel-heading, .filter-note { grid-column: 1; }
       .filter-group, .filter-group + .filter-group { padding-top: 8px; }
       .app-footer { padding: 0 18px 22px; }
+      .overview-grid { grid-template-columns: 1fr; }
+      .overview-block { padding: 16px; }
       .reader-canvas, .editor-canvas { padding: 16px 12px 48px; }
       .paper, .editor-paper { min-height: 900px; padding: 54px 52px 64px; }
       .editable-content { min-height: 650px; }
@@ -365,7 +380,6 @@
       #editor-font-size { width: 50px; }
       .word-count { max-width: 70px; font-size: 8px; white-space: normal; text-align: right; }
       .editor-canvas { padding: 12px 9px 106px; }
-      .editor-ruler { height: 22px; margin-bottom: 6px; font-size: 8px; }
       .editable-content { min-height: 560px; font-size: 15px; }
       .save-status, #save-draft { display: none; }
       .mobile-savebar {
@@ -407,7 +421,8 @@
         <nav aria-label="Homework Agent sections">
           <p class="workspace-label">Workspace</p>
           <div class="nav-items">
-            <button class="nav-item" type="button" data-section="draft-review" aria-current="page" aria-label="Documents"><span class="nav-glyph" aria-hidden="true">▤</span><span class="nav-label">Documents</span></button>
+            <button class="nav-item" type="button" data-section="overview" aria-current="page" aria-label="Overview"><span class="nav-glyph" aria-hidden="true">⌂</span><span class="nav-label">Overview</span></button>
+            <button class="nav-item" type="button" data-section="draft-review" aria-label="Documents"><span class="nav-glyph" aria-hidden="true">▤</span><span class="nav-label">Documents</span></button>
             <button class="nav-item" type="button" data-section="edit-draft" aria-label="Edit Draft"><span class="nav-glyph" aria-hidden="true">↗</span><span class="nav-label">Edit Draft</span></button>
             <button class="nav-item" type="button" data-section="settings" aria-label="Settings"><span class="nav-glyph" aria-hidden="true">⚙</span><span class="nav-label">Settings</span></button>
           </div>
@@ -416,6 +431,31 @@
       </aside>
 
       <main class="main-column">
+        <section id="page-overview" data-home-page aria-labelledby="overview-title">
+          <div class="section-heading">
+            <div><p class="eyebrow">Homework Agent / Overview</p><h1 id="overview-title">How draft review works</h1><p class="page-description">A guide to the CLI/MCP artifact flow, from agent output to student review.</p></div>
+            <span class="section-mark">WORKFLOW OVERVIEW</span>
+          </div>
+          <div class="overview-grid">
+            <section class="overview-block">
+              <p class="eyebrow">Artifact output</p>
+              <h2>Review the generated HTML</h2>
+              <p>The local agent sends generated HTML to the configured iBacalao server, where the student can review and edit the draft.</p>
+              <div class="overview-line"><span>Included here</span><strong>4 sample documents</strong></div>
+              <div class="overview-actions"><button class="action-button primary" type="button" data-go-review>Browse documents</button></div>
+            </section>
+            <section class="overview-block">
+              <p class="eyebrow">What happens next</p>
+              <div class="event-list">
+                <div class="event-row"><span class="event-index">01</span><div><strong>Agent creates an artifact</strong><small>CLI / MCP job</small></div><small>STEP</small></div>
+                <div class="event-row"><span class="event-index">02</span><div><strong>Student reads the draft</strong><small>Review the saved draft in iBacalao</small></div><small>STEP</small></div>
+                <div class="event-row"><span class="event-index">03</span><div><strong>Student decides what to do next</strong><small>No automatic submission</small></div><small>STEP</small></div>
+              </div>
+            </section>
+          </div>
+          <div class="sample-note"><strong>Sample workspace.</strong> The four documents are examples. Open one from Documents to edit it.</div>
+        </section>
+
         <section id="page-draft-review" data-home-page aria-labelledby="page-title">
           <div class="page-heading">
             <h1 id="page-title">Recent documents</h1>
@@ -569,7 +609,6 @@
       </div>
     </header>
     <section class="editor-canvas" aria-label="Edit sample document page">
-      <div class="editor-ruler" aria-hidden="true"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span></div>
       <article class="editor-paper">
         <div class="editable-content" id="draft-editor" contenteditable="true" role="textbox" aria-label="Sample draft document text" aria-multiline="true" spellcheck="true"></div>
       </article>
@@ -634,7 +673,7 @@
     const discardDialog = document.getElementById("discard-dialog");
     const zoomReadout = document.getElementById("zoom-readout");
     let storedEdits = readStoredEdits();
-    let activeSection = "draft-review";
+    let activeSection = "overview";
     let currentView = "home";
     let currentDocument = null;
     let savedHtml = "";
@@ -728,7 +767,7 @@
       const mainButton = node("button", "draft-main");
       mainButton.type = "button";
       mainButton.setAttribute("data-open-doc", doc.id);
-      mainButton.setAttribute("aria-label", "Preview sample document: " + doc.title);
+      mainButton.setAttribute("aria-label", "Edit sample document: " + doc.title);
       mainButton.appendChild(makeThumb(doc));
 
       const copy = node("span", "draft-copy");
@@ -958,7 +997,10 @@
       });
     });
     document.querySelectorAll("[data-home-link]").forEach(function (link) {
-      link.addEventListener("click", function (event) { event.preventDefault(); activateSection("draft-review"); });
+      link.addEventListener("click", function (event) { event.preventDefault(); activateSection("overview"); });
+    });
+    document.querySelectorAll("[data-go-review]").forEach(function (button) {
+      button.addEventListener("click", function () { activateSection("draft-review"); });
     });
     filterToggle.addEventListener("click", function () {
       filterColumn.hidden = !filterColumn.hidden;
@@ -992,7 +1034,7 @@
     });
     draftList.addEventListener("click", function (event) {
       const button = event.target.closest("[data-open-doc]");
-      if (button) openReader(getDocument(button.dataset.openDoc));
+      if (button) openEditor(getDocument(button.dataset.openDoc));
     });
     document.querySelectorAll("[data-back-to-drafts]").forEach(function (button) {
       button.addEventListener("click", function () { activateSection("draft-review"); });
@@ -1080,7 +1122,7 @@
     });
 
     renderDrafts();
-    activateSection("draft-review");
+    activateSection("overview");
   </script>
 </body>
 </html>
