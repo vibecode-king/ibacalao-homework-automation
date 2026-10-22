@@ -206,6 +206,9 @@
     .toolbar-title small { display: block; margin-top: 2px; color: var(--muted); font: 9px var(--font-mono); letter-spacing: .04em; white-space: nowrap; }
     .toolbar-divider { width: 1px; height: 28px; flex: 0 0 auto; background: var(--edge); }
     .action-button { min-height: 44px; padding: 0 12px; font-size: 11px; }
+    .download-action { display: inline-flex; width: 44px; min-height: 44px; align-items: center; justify-content: center; padding: 0; border-color: #fff; border-radius: 4px; background: #fff; color: #3c4043; }
+    .download-action:hover { border-color: #f1f3f4; background: #f1f3f4; color: #202124; }
+    .download-action svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
     .toolbar-icon { display: inline-flex; width: 44px; min-height: 44px; align-items: center; justify-content: center; border: 1px solid transparent; border-radius: 4px; background: transparent; color: var(--secondary); cursor: pointer; font: 17px var(--font-mono); }
     .toolbar-icon:hover { border-color: var(--edge); color: var(--bright); }
     .zoom-readout { min-width: 46px; color: var(--body); font: 10px var(--font-mono); text-align: center; }
@@ -336,6 +339,7 @@
       .doc-toolbar { min-height: 60px; gap: 6px; padding: 6px 8px; }
       .doc-toolbar-left, .doc-toolbar-right { gap: 5px; }
       .doc-toolbar .action-button { min-height: 44px; padding: 0 9px; font-size: 10px; }
+      .doc-toolbar .download-action { width: 44px; padding: 0; }
       .toolbar-title strong { max-width: 112px; font-size: 10px; }
       .toolbar-title small { font-size: 7px; }
       .toolbar-divider { height: 22px; }
@@ -498,14 +502,17 @@
       <div class="doc-toolbar-left">
       <button class="action-button" type="button" data-back-to-drafts aria-label="Back to Documents">← <span>Documents</span></button>
         <span class="toolbar-divider" aria-hidden="true"></span>
-        <div class="toolbar-title"><strong id="reader-title">Sample document</strong><small id="reader-meta">SAMPLE · DOCUMENT PREVIEW</small></div>
+        <div class="toolbar-title"><strong id="reader-title">Sample document</strong><small id="reader-meta">SAMPLE DOCUMENT</small></div>
       </div>
       <div class="doc-toolbar-right">
-        <span class="status-tag">Sample · not submitted</span>
+        <span class="status-tag">PREVIEW</span>
         <button class="toolbar-icon" type="button" data-zoom="out" aria-label="Decrease document zoom" title="Zoom out">−</button>
         <span class="zoom-readout" id="zoom-readout" aria-live="polite">100%</span>
         <button class="toolbar-icon" type="button" data-zoom="in" aria-label="Increase document zoom" title="Zoom in">+</button>
         <button class="action-button" type="button" id="fullscreen">Full screen</button>
+        <button class="action-button download-action" type="button" id="download-document" aria-label="Download document as HTML" title="Download document as HTML">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v4h14v-4" /></svg>
+        </button>
         <button class="action-button primary" type="button" data-open-editor>Edit</button>
       </div>
     </header>
@@ -523,7 +530,7 @@
       <div class="editor-title-row">
         <button class="action-button" type="button" id="editor-back" aria-label="Back to document preview">← <span>Preview</span></button>
         <img class="editor-brand-mark" src="./preview-assets/ibacalao-icon.png" alt="">
-        <div class="editor-file-title"><strong id="editor-title">Sample document</strong><small>Sample copy · not submitted</small></div>
+        <div class="editor-file-title"><strong id="editor-title">Sample document</strong><small>EDIT · LOCAL SAMPLE COPY</small></div>
         <p class="save-status" id="save-status" data-state="clean" role="status" aria-live="polite">Sample text · not saved</p>
         <button class="action-button primary" id="save-draft" type="button">Save</button>
       </div>
@@ -864,6 +871,37 @@
       editor.focus();
     }
 
+    function downloadCurrentDocument() {
+      const doc = currentDocument || documents[0];
+      const exportDocument = document.implementation.createHTMLDocument(doc.title);
+      exportDocument.documentElement.lang = "en";
+
+      const viewport = exportDocument.createElement("meta");
+      viewport.name = "viewport";
+      viewport.content = "width=device-width, initial-scale=1";
+      exportDocument.head.appendChild(viewport);
+
+      const style = exportDocument.createElement("style");
+      style.textContent = "@page{size:letter;margin:1in}body{margin:0;background:#e8eaed;color:#202124;font-family:Arial,sans-serif}.paper{box-sizing:border-box;width:8.5in;min-height:11in;margin:32px auto;padding:1in;background:#fff}.document-copy{font:11pt/1.15 Arial,sans-serif}.document-copy h1{margin:0 0 12px;font:600 20pt/1.2 Arial,sans-serif}.document-copy>h1+p{margin:0 0 24px;color:#5f6368;font:11pt/1.3 Arial,sans-serif}.document-copy h2,.document-copy h3{margin:20px 0 8px;font:600 12pt/1.25 Arial,sans-serif}.document-copy p,.document-copy div{margin:0 0 10px}.document-copy ul,.document-copy ol{margin:0 0 10px;padding-left:24px}.document-copy li{margin:0 0 4px}@media print{body{background:#fff}.paper{width:auto;min-height:0;margin:0;padding:0}}";
+      exportDocument.head.appendChild(style);
+
+      const page = exportDocument.createElement("main");
+      page.className = "paper";
+      const content = exportDocument.createElement("article");
+      content.className = "document-copy";
+      content.innerHTML = htmlFor(doc);
+      page.appendChild(content);
+      exportDocument.body.replaceChildren(page);
+
+      const filename = doc.title.replace(/[^a-z0-9]+/gi, "-").replace(/^-+|-+$/g, "").toLowerCase() || "homework-document";
+      const url = URL.createObjectURL(new Blob(["<!doctype html>\n" + exportDocument.documentElement.outerHTML], { type: "text/html;charset=utf-8" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename + ".html";
+      link.click();
+      window.setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    }
+
     function saveSampleDraft() {
       const html = currentHtml();
       editor.innerHTML = html;
@@ -962,6 +1000,7 @@
     document.querySelectorAll("[data-open-editor]").forEach(function (button) {
       button.addEventListener("click", function () { openEditor(currentDocument); });
     });
+    document.getElementById("download-document").addEventListener("click", downloadCurrentDocument);
     document.getElementById("editor-back").addEventListener("click", requestReturnToReader);
     document.getElementById("draft-editor").addEventListener("input", function () {
       updateWordCount();
