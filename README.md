@@ -1,28 +1,28 @@
 <p align="center">
-  <img src=".github/readme/hero.svg" alt="iBacalao Homework Automation: local pairing and health checks; assignment processing is paused" width="100%">
+  <img src=".github/readme/hero.svg" alt="iBacalao Homework Automation: local worker pairing and status" width="100%">
 </p>
 
 <p align="center">
   <a href="#quick-start">Quick start</a> ·
-  <a href="#current-integration-status">Current status</a> ·
+  <a href="#what-works-today">Current status</a> ·
   <a href="docs/PROTOCOL.md">Protocol</a> ·
   <a href="SECURITY.md">Security</a>
 </p>
 
-<p align="center"><strong>Pairing and health checks are available. Assignment processing is paused until DOCX-preserving support is ready.</strong></p>
+<p align="center"><strong>Pairing and worker status work. Assignment processing is not available yet.</strong></p>
 
-## Current integration status
+## What works today
 
 > [!IMPORTANT]
-> The current iBacalao integration lets you pair the worker and report its heartbeat, but it does not release assignment content. Job claims return `paused: true` with reason `docx_round_trip_not_ready`. The server also rejects the worker's legacy `artifactHtml` completion format. **Do not use this integration to process assignments yet.**
+> You can pair the worker and check its connection, but the current iBacalao integration does not send assignments to the agent or create drafts. **Use it for setup and status only; it cannot process homework yet.**
 
-| Available now | Paused |
+| Works now | Not available yet |
 |---|---|
-| Pair the local worker with a one-time Homework setup code. | Claim assignment prompts and send them to a model. |
-| Save the agent token to local `.env` with owner-only permissions. | Generate and save student drafts. |
-| Report worker health to iBacalao. | Complete a DOCX-preserving edit and save round trip. |
+| Pair the local worker with a one-time Homework setup code. | Send assignment prompts to a model. |
+| Save the agent token to local `.env` with owner-only permissions. | Generate and save drafts for review. |
+| Report worker health to iBacalao. | Save completed work for student review. |
 
-`artifactHtml` is HTML, not a DOCX document. The worker never submits work to a school platform. See the [agent protocol](docs/PROTOCOL.md) for the current endpoint contract.
+The worker never submits work to a school platform. See the [agent protocol](docs/PROTOCOL.md) for technical details.
 
 ## This repository
 
@@ -50,14 +50,14 @@ For a Vercel preview, enter that exact preview URL when `npm run pair` asks for 
 
 ## Choose a model path
 
-The worker supports two ways to connect a model. In the current integration, both can report status but neither receives assignment content while job claiming is paused.
+The worker includes two ways to connect a model. The current iBacalao integration does not pass assignments to either one yet.
 
 | | MCP host | API or local model |
 |---|---|---|
 | Start | MCP-capable AI app launches `src/mcp.ts` | `npm run once` or `npm start` |
 | Model access | Your MCP app uses its configured AI plan or model | Your OpenAI-compatible endpoint and optional API key |
 | Credential in worker | iBacalao agent token | iBacalao agent token and model settings |
-| Current assignment flow | Claim returns paused before exposing a prompt | Claim returns paused before calling the model |
+| Assignment processing | Not available yet | Not available yet |
 
 <details>
 <summary><strong>MCP configuration</strong></summary>
@@ -79,7 +79,7 @@ After pairing, copy `IBACALAO_BASE_URL` and `IBACALAO_AGENT_TOKEN` from your loc
 }
 ```
 
-The MCP server registers `claim_homework_job`, `submit_homework_draft`, and `fail_homework_job`. Currently, the claim tool returns a paused message before a prompt or job-scoped claim token is provided. The completion tool sends legacy HTML, which the current integration rejects.
+The MCP server can report its status. Its assignment tools are not active in the current iBacalao integration, so it will not fetch homework or send a prompt to your AI app.
 
 </details>
 
@@ -97,13 +97,13 @@ Add your model settings to the `.env` created by pairing. Set `IBACALAO_LLM_API_
 | `IBACALAO_LLM_MODEL` | Model name sent to the endpoint. |
 | `IBACALAO_LLM_MAX_TOKENS` | Output cap per draft; defaults to 8,000 and accepts values from 1 to 32,000. |
 
-The scripts read environment variables from the process; they do not load `.env` automatically. In macOS/Linux bash or zsh, load it and start a health/claim cycle:
+The scripts read environment variables from the process; they do not load `.env` automatically. In macOS/Linux bash or zsh, load it and check the connection:
 
 ```sh
 set -a
 . ./.env
 set +a
-npm run once   # one cycle; reports that drafting is paused
+npm run once   # one cycle; reports that assignment processing is unavailable
 # or:
 npm start      # keep polling and reporting health
 ```
@@ -122,10 +122,10 @@ flowchart LR
     X --> E[Token saved in local .env]
     E --> W[MCP or API worker reports health]
     W --> Q[Claim request]
-    Q --> R[Paused response; no assignment content returned]
+    Q --> R[Assignment processing unavailable]
 ```
 
-Pairing uses a short-lived code. The browser does not receive the long-lived token; the local worker writes it to `.env` with owner-only permissions. After pairing, both worker modes can report health. The current claim response stops before assignment content or a model request.
+Pairing uses a short-lived code. The browser does not receive the long-lived token; the local worker writes it to `.env` with owner-only permissions. After pairing, both worker modes can report status. Assignment content is not currently passed to a model.
 
 </details>
 
@@ -144,9 +144,8 @@ Pairing uses a short-lived code. The browser does not receive the long-lived tok
 ## Privacy and security
 
 - The pairing code is exchanged directly between the local worker and iBacalao. The long-lived token is stored in `.env` with owner-only permissions and must not be committed.
-- In API mode, the worker sends assignment prompts and your model key only to the configured model endpoint when the server provides a job. In MCP mode, the MCP host and its model provider may receive the prompt and job-scoped claim token. The current paused response contains neither.
+- In API mode, assignment content goes to the model endpoint you configure. In MCP mode, your AI app may pass it to its model provider. The current integration does not send assignment content to either model path.
 - Non-local server URLs require HTTPS, redirects are refused, and upstream responses are size-limited. Unsandboxed local AI CLI execution is disabled.
-- The server must sanitize generated HTML before storing or rendering it. This worker does not sanitize HTML, and the legacy HTML field does not satisfy DOCX round-trip support.
 - Treat assignment text as untrusted data. Review your provider's retention settings and send only material you are allowed to share.
 
 For vulnerability reports, follow [SECURITY.md](SECURITY.md).
