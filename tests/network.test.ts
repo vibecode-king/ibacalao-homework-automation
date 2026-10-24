@@ -35,12 +35,12 @@ test("BYOK model requests refuse redirects", async () => {
   globalThis.fetch = async (_input, init) => {
     redirectMode = init?.redirect;
     return new Response(JSON.stringify({
-      choices: [{ message: { content: JSON.stringify({ artifactHtml: "<p>Synthetic result</p>" }) } }],
+      choices: [{ message: { content: JSON.stringify({ artifactText: "Synthetic result" }) } }],
     }), { status: 200, headers: { "content-type": "application/json" } });
   };
   try {
     const result = await runConfiguredAssignmentAgent("Synthetic prompt only.");
-    assert.equal(result.artifactHtml, "<p>Synthetic result</p>");
+    assert.equal(result.artifactText, "Synthetic result");
     assert.equal(redirectMode, "error");
   } finally {
     globalThis.fetch = originalFetch;

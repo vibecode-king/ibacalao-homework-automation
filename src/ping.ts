@@ -2,6 +2,7 @@ import { hostname } from "node:os";
 import { setTimeout as sleep } from "node:timers/promises";
 import { runConfiguredAssignmentAgent } from "./agentRunner";
 import { createAgentApiClient } from "./client";
+import { buildDocxFromText } from "./docx";
 import { normalizeAgentServiceBaseUrl } from "./network";
 
 type ClaimedJob = {
@@ -27,7 +28,8 @@ async function processOne(): Promise<boolean> {
   const result = await request<{ job: ClaimedJob | null; paused?: boolean; reason?: string }>("/api/agent/jobs/claim", { agentId, pollIntervalMs: pollMs });
   if (result.paused) {
     if (!pausedMessageShown) {
-      console.log("[homework-agent] Connected, but drafting is paused until DOCX-preserving support is available.");
+      const reason = typeof result.reason === "string" ? ` (${result.reason})` : "";
+      console.log(`[homework-agent] The server paused assignment processing${reason}. No prompt was sent to a model.`);
       pausedMessageShown = true;
     }
     return false;
@@ -65,9 +67,22 @@ async function processOne(): Promise<boolean> {
     }
 
     const completionPath = `/api/agent/jobs/${encodeURIComponent(job.id)}/complete`;
-    const completionBody = {
+    let document: Buffer;
+    try {
+      document = buildDocxFromText(output.artifactText);
+    } catch (error) {
+      const message = error instanceof Error ? error.message.slice(0, 400) : "Generated document was invalid.";
+      let releaseConfirmed = false;
+      try {
+        await request(`/api/agent/jobs/${encodeURIComponent(job.id)}/fail`, { claimToken: job.claimToken, error: message });
+        releaseConfirmed = true;
+      } catch {
+        // Report uncertainty rather than claiming that the job was released.
+      }
+      throw new Error(`DOCX generation failed for job ${job.id}; ${releaseConfirmed ? "job released" : "job release could not be confirmed"}. ${message}`);
+    }
+    const completionMetadata = {
       claimToken: job.claimToken,
-      artifactHtml: output.artifactHtml,
       engine: output.engine,
       model: output.model,
       qaResult: output.qaResult,
@@ -75,7 +90,7 @@ async function processOne(): Promise<boolean> {
     // A completion request can persist the artifact before returning an error.
     // Retrying the identical payload is safe; calling /fail here could consume a
     // claim token that the completion already cleared.
-    const saved = await submitCompletion<{ job: { id: string; state: string }; message: string }>(completionPath, completionBody);
+    const saved = await submitCompletion<{ job: { id: string; state: string }; message: string }>(completionPath, document, completionMetadata);
     console.log(`[homework-agent] Draft saved for review. Saved job ${saved.job.id} as ${saved.job.state}. The school platform was not changed.`);
     activeJobId = null;
     await request("/api/agent/health", { agentId, status: "idle", pollIntervalMs: pollMs }).catch(() => undefined);

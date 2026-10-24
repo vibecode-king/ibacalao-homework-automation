@@ -3,6 +3,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { hostname } from "node:os";
 import { createAgentApiClient } from "./client";
+import { buildDocxFromText } from "./docx";
 import { normalizeAgentServiceBaseUrl } from "./network";
 
 // MCP mode: the user's own AI client (a Claude or ChatGPT subscription, a local
@@ -14,7 +15,7 @@ const token = process.env.IBACALAO_AGENT_TOKEN?.trim();
 const agentId = (process.env.IBACALAO_AGENT_ID || `${hostname()}-mcp-${process.pid}`).slice(0, 120);
 const { request, submitCompletion } = createAgentApiClient(baseUrl, token);
 
-type ClaimedJob = { id: string; title: string; claimToken: string; prompt: string; leaseMinutes?: number };
+type ClaimedJob = { id: string; title: string; claimToken: string; prompt: string; leaseMinutes?: number; modelName?: string };
 let activeJobId: string | null = null;
 const reportHealth = (status: "polling" | "idle" | "working" | "error", jobId?: string) => request("/api/agent/health", {
   agentId,
@@ -37,16 +38,17 @@ const server = new McpServer({ name: "ibacalao-homework-automation", version: "0
 server.registerTool(
   "claim_homework_job",
   {
-    description: "Claim the next queued homework job. The current iBacalao web app reports a paused status until DOCX-preserving support is implemented; in that case no assignment is claimed or sent to an AI provider.",
+    description: "Claim the next queued homework job. If the server reports that processing is paused, no assignment is claimed or sent to an AI provider.",
     inputSchema: {},
   },
   async () => {
     try {
-      const result = await request<{ job: ClaimedJob | null; paused?: boolean }>("/api/agent/jobs/claim", { agentId, pollIntervalMs: 30_000 });
+      const result = await request<{ job: ClaimedJob | null; paused?: boolean; reason?: string }>("/api/agent/jobs/claim", { agentId, pollIntervalMs: 30_000 });
       if (result.paused) {
         activeJobId = null;
         await reportHealth("idle");
-        return text("Homework drafting is paused until DOCX-preserving support is available. No assignment was claimed or sent to an AI provider.");
+        const reason = typeof result.reason === "string" ? ` (${result.reason})` : "";
+        return text(`Homework drafting is paused on this server${reason}. No assignment was claimed or sent to an AI provider.`);
       }
       const { job } = result;
       if (!job) {
@@ -61,13 +63,14 @@ server.registerTool(
         `title: ${job.title}`,
         `claimToken: ${job.claimToken}`,
         `leaseMinutes: ${job.leaseMinutes ?? 15}`,
+        ...(job.modelName ? [`modelName: ${job.modelName}`] : []),
         "",
         UNTRUSTED_NOTICE,
         "<<<ASSIGNMENT_BEGIN",
         job.prompt,
         "ASSIGNMENT_END>>>",
         "",
-        "When done, call submit_homework_draft with artifactHtml (a self-contained HTML document body). If you cannot finish, call fail_homework_job.",
+        "When done, call submit_homework_draft with artifactText containing the complete draft as plain text or Markdown (never HTML). If you cannot finish, call fail_homework_job.",
       ].join("\n"));
     } catch (error) {
       activeJobId = null;
@@ -80,19 +83,21 @@ server.registerTool(
 server.registerTool(
   "submit_homework_draft",
   {
-    description: "Submit a finished draft for student review. The current iBacalao web app rejects HTML completion until DOCX-preserving support is implemented. Nothing is submitted to the school.",
+    description: "Submit a finished draft as a DOCX for student review. Supply the complete draft as plain text or Markdown; HTML is rejected. Nothing is submitted to the school.",
     inputSchema: {
       jobId: z.string().min(1).max(200),
       claimToken: z.string().min(20).max(500),
-      artifactHtml: z.string().min(1).max(500_000),
+      artifactText: z.string().min(1).max(500_000),
       model: z.string().max(160).optional(),
     },
   },
-  async ({ jobId, claimToken, artifactHtml, model }) => {
+  async ({ jobId, claimToken, artifactText, model }) => {
     try {
+      const document = buildDocxFromText(artifactText);
       const saved = await submitCompletion<{ job: { id: string; state: string }; message: string }>(
         `/api/agent/jobs/${encodeURIComponent(jobId)}/complete`,
-        { claimToken, artifactHtml, engine: "mcp-client", model: model ?? "mcp-client" },
+        document,
+        { claimToken, engine: "mcp-client", model: model ?? "mcp-client" },
       );
       activeJobId = null;
       await reportHealth("idle");

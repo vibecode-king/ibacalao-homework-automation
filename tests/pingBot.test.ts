@@ -5,12 +5,11 @@ import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { join } from "node:path";
 
-function readBody(req: IncomingMessage): Promise<string> {
+function readBody(req: IncomingMessage): Promise<Buffer> {
   return new Promise((resolve, reject) => {
-    let body = "";
-    req.setEncoding("utf8");
-    req.on("data", (chunk: string) => { body += chunk; });
-    req.on("end", () => resolve(body));
+    const chunks: Buffer[] = [];
+    req.on("data", (chunk: Buffer | string) => { chunks.push(Buffer.from(chunk)); });
+    req.on("end", () => resolve(Buffer.concat(chunks)));
     req.on("error", reject);
   });
 }
@@ -20,22 +19,23 @@ function send(res: ServerResponse, status: number, body: unknown): void {
   res.end(JSON.stringify(body));
 }
 
-test("Homework agent claims a job, calls the configured model endpoint, and sends the artifact for review", async () => {
-  const completions: Record<string, unknown>[] = [];
+test("Ping Bot builds a DOCX, uploads multipart data, and retries the identical completion", async () => {
+  const completions: Array<{ metadata: Record<string, unknown>; document: Buffer; contentType: string }> = [];
   let modelPrompt = "";
   let claimCount = 0;
   let completionCount = 0;
   let failCount = 0;
   const server = createServer(async (req, res) => {
-    const bodyText = await readBody(req);
-    const body = bodyText ? JSON.parse(bodyText) as Record<string, unknown> : {};
+    const bodyBytes = await readBody(req);
+    const isCompletion = req.url === "/api/agent/jobs/job-e2e-1/complete";
+    const body = bodyBytes.length && !isCompletion ? JSON.parse(bodyBytes.toString("utf8")) as Record<string, unknown> : {};
     if (req.method === "POST" && req.url === "/v1/chat/completions") {
       const request = body as { messages?: Array<{ content?: string }> };
       modelPrompt = request.messages?.[1]?.content ?? "";
       send(res, 200, {
         model: "local-test-model",
         choices: [{ message: { content: JSON.stringify({
-          artifactHtml: "<h1>Review draft</h1><p>Local endpoint draft</p>",
+          artifactText: "# Review draft\n\nLocal endpoint draft",
           engine: "test-endpoint",
           model: "local-test-model",
           qaResult: { status: "self_checked", checks: [] },
@@ -58,7 +58,20 @@ test("Homework agent claims a job, calls the configured model endpoint, and send
       return;
     }
     if (req.method === "POST" && req.url === "/api/agent/jobs/job-e2e-1/complete") {
-      completions.push(body);
+      const form = await new Request("http://localhost/complete", {
+        method: "POST",
+        headers: { "content-type": String(req.headers["content-type"]) },
+        body: new Uint8Array(bodyBytes),
+      }).formData();
+      const file = form.get("document");
+      const metadata = form.get("metadata");
+      assert.ok(file instanceof File);
+      assert.equal(typeof metadata, "string");
+      completions.push({
+        metadata: JSON.parse(String(metadata)) as Record<string, unknown>,
+        document: Buffer.from(await file.arrayBuffer()),
+        contentType: String(req.headers["content-type"]),
+      });
       completionCount += 1;
       if (completionCount === 1) {
         send(res, 503, { error: "temporary persistence failure" });
@@ -102,16 +115,20 @@ test("Homework agent claims a job, calls the configured model endpoint, and send
     assert.equal(claimCount, 1);
     assert.match(modelPrompt, /short, reviewable source comparison/);
     assert.equal(completionCount, 2, "the exact completion payload should be retried after a transient server error");
-    assert.deepEqual(completions[1], completions[0]);
+    assert.deepEqual(completions[1].metadata, completions[0].metadata);
+    assert.deepEqual(completions[1].document, completions[0].document);
     assert.equal(failCount, 0, "a completion error must not send /fail with an already-consumed claim token");
     const completion = completions[0];
     assert.ok(completion);
-    assert.equal(completion.claimToken, "claim-token-for-test-only-0001");
-    assert.match(String(completion.artifactHtml), /<h1>Review draft<\/h1>/);
-    assert.equal(completion.engine, "test-endpoint");
-    assert.equal(completion.model, "local-test-model");
-    assert.deepEqual(completion.qaResult, { status: "self_checked", checks: [] });
-    assert.match(stdout, /Saved job-e2e-1 as ready_for_review/);
+    assert.equal(completion.metadata.claimToken, "claim-token-for-test-only-0001");
+    assert.match(completion.contentType, /^multipart\/form-data;\s*boundary=/i);
+    assert.equal(completion.document.readUInt32LE(0), 0x04034b50);
+    assert.match(completion.document.toString("utf8"), /word\/document\.xml/);
+    assert.match(completion.document.toString("utf8"), /Review draft/);
+    assert.equal(completion.metadata.engine, "test-endpoint");
+    assert.equal(completion.metadata.model, "local-test-model");
+    assert.deepEqual(completion.metadata.qaResult, { status: "self_checked", checks: [] });
+    assert.match(stdout, /Saved job job-e2e-1 as ready_for_review/);
   } finally {
     server.close();
   }

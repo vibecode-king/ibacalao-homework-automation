@@ -1,7 +1,7 @@
 import { normalizeAgentServiceBaseUrl } from "./network";
 
 export type AssignmentAgentResult = {
-  artifactHtml: string;
+  artifactText: string;
   engine: string;
   model: string;
   qaResult?: unknown;
@@ -23,12 +23,15 @@ export function parseAssignmentAgentResult(raw: string, defaults: { engine: stri
   const parsed = parseJsonOutput(raw);
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("The configured agent result must be a JSON object.");
   const value = parsed as Record<string, unknown>;
-  if (typeof value.artifactHtml !== "string" || !value.artifactHtml.trim()) {
-    throw new Error("The configured agent result must include non-empty artifactHtml.");
+  if (typeof value.artifactText !== "string" || !value.artifactText.trim()) {
+    throw new Error("The configured agent result must include non-empty artifactText.");
   }
-  if (value.artifactHtml.length > 500_000) throw new Error("The generated document exceeds the 500 KB limit.");
+  if (/<\/?(?:html|body|div|p|h[1-6]|ul|ol|li|table|tr|td|th|section|article)\b[^>]*>/i.test(value.artifactText)) {
+    throw new Error("The configured agent must return plain text or Markdown, not HTML.");
+  }
+  if (Buffer.byteLength(value.artifactText, "utf8") > 500_000) throw new Error("The generated document exceeds the 500 KB limit.");
   return {
-    artifactHtml: value.artifactHtml,
+    artifactText: value.artifactText,
     engine: typeof value.engine === "string" ? value.engine.slice(0, 120) : defaults.engine,
     model: typeof value.model === "string" ? value.model.slice(0, 160) : defaults.model,
     ...(value.qaResult && typeof value.qaResult === "object" ? { qaResult: value.qaResult } : {}),
@@ -59,7 +62,7 @@ async function runOpenAiCompatible(prompt: string, preferredModel?: string): Pro
       max_tokens: Math.min(32_000, Math.max(1, Math.round(Number(process.env.IBACALAO_LLM_MAX_TOKENS) || 8_000))),
       response_format: { type: "json_object" },
       messages: [
-        { role: "system", content: "Return exactly one JSON object with artifactHtml, engine, model, and optional qaResult. Do not wrap it in Markdown." },
+        { role: "system", content: "Return exactly one JSON object with artifactText, engine, model, and optional qaResult. artifactText must contain the complete document as plain text or Markdown, never HTML. Do not wrap it in Markdown." },
         { role: "user", content: prompt },
       ],
     };
