@@ -1,41 +1,105 @@
+<div align="center">
+
 # iBacalao Homework Automation
 
-Local agent that turns your iBacalao assignment queue into **drafts for you to review**. It never submits anything to your school, and it never uses a shared model key. You choose how the writing is done:
+### A local worker for pairing and agent health.
 
-| Mode | Use it when | Needs |
-|---|---|---|
-| **MCP** (`npm run mcp`) | You already pay for an AI subscription (Claude, ChatGPT, etc.) in an app that supports MCP | Your AI app, no API key |
-| **API key / local model** (`npm start`) | You have your own API key or run a local model | An OpenAI-compatible endpoint |
+[![Node.js 20+](https://img.shields.io/badge/Node.js-20%2B-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.6%2B-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![MCP](https://img.shields.io/badge/MCP-compatible-6E56CF)](https://modelcontextprotocol.io/)
+[![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Your long-lived agent token only goes to the iBacalao server you configure (HTTPS enforced, redirects refused). In API mode your model key and assignment prompt only go to the endpoint selected by `IBACALAO_LLM_BASE_URL`; if you leave it blank and set only an OpenAI API key, the endpoint defaults to OpenAI. No local AI CLI is executed.
+[Quick start](#quick-start) · [Current status](#current-status) · [Privacy](#privacy-and-security) · [Protocol](docs/PROTOCOL.md)
 
-## Data and privacy
+</div>
 
-This agent runs on your computer, but assignment content is sent to the AI service you choose. In API mode, the full job prompt returned by iBacalao is sent to `IBACALAO_LLM_BASE_URL`. In MCP mode, the MCP tool returns the prompt and a job-scoped `claimToken` to the AI app hosting this server so it can save the draft. The host app may send both to its model provider and retain them under that provider's settings. The long-lived `IBACALAO_AGENT_TOKEN` stays in the MCP server process and is used to call the iBacalao API; the MCP app configuration contains that token, so protect that configuration file. A prompt can include assignment text and source material from a school platform. Check the provider's retention and training settings and make sure you are allowed to send the material before using the agent.
+This repository contains a local TypeScript worker for pairing with iBacalao and reporting agent health. It also includes MCP and OpenAI-compatible model paths for the homework workflow, which cannot process assignments until end-to-end DOCX-preserving generation and editing are implemented.
 
-The agent sends model-generated `artifactHtml` to the iBacalao completion API. The API protocol requires the server to sanitize that HTML before storing or rendering it. A self-hosted server must provide the same protection; this local agent does not sanitize HTML itself. See [the protocol](docs/PROTOCOL.md).
+> [!IMPORTANT]
+> **Assignment processing is currently paused in the iBacalao integration.** Pairing and agent heartbeats work, but the server does not release assignment content until DOCX-preserving generation and editing are ready. The worker receives a paused response before any prompt reaches a model. Do not use this integration to process assignments yet.
 
-The current iBacalao Homework integration pairs the worker and can show its heartbeat, but returns a paused claim response and rejects HTML completion until DOCX-preserving generation and editing are implemented. Do not use this worker to process assignments against that integration yet. The legacy `artifactHtml` field is not a DOCX file.
+## Contents
 
-## Setup (both modes)
+- [Current status](#current-status)
+- [How it works](#how-it-works)
+- [Quick start](#quick-start)
+- [MCP mode](#mcp-mode)
+- [API and local-model mode](#api-and-local-model-mode)
+- [Privacy and security](#privacy-and-security)
+- [Responsible use](#responsible-use)
+- [Development](#development)
+
+## Current status
+
+| Available now | Paused until DOCX round-trip support is ready |
+|---|---|
+| Pair the local worker with a one-time code from iBacalao Homework settings. | Claim and generate assignment drafts. |
+| Save the long-lived agent token in local `.env` with owner-only file permissions. | Send assignment prompts to an AI provider. |
+| Report the worker's heartbeat to iBacalao. | Save generated HTML as a student document. |
+
+The current server responds to job claims with `paused: true` and reason `docx_round_trip_not_ready`; it rejects the legacy `artifactHtml` completion format. That field is HTML and is **not** a DOCX file. See the [protocol notes](docs/PROTOCOL.md).
+
+## How it works
+
+```mermaid
+flowchart LR
+    C[One-time code in iBacalao Homework settings] --> P[npm run pair]
+    P --> X[Worker exchanges code with iBacalao]
+    X --> E[Token and server URL saved to local .env]
+    E --> W[Worker reports health]
+    W --> Q{Claim response}
+    Q -->|Current integration: paused| N[No assignment prompt reaches a model]
+    Q -. when DOCX round-trip is supported .-> J[Assignment job]
+    J -.-> M[MCP host or configured model endpoint]
+    M -.-> D[Draft saved for review]
+```
+
+The worker includes an MCP server and an API/local-model runner. Both depend on server support for the document format; the current iBacalao integration pauses before exposing assignment content.
+
+## Quick start
+
+### 1. Install
+
+Use Node.js 20 or newer.
 
 ```bash
+git clone https://github.com/vibecode-king/ibacalao-homework-automation.git
+cd ibacalao-homework-automation
 npm ci
 ```
 
-In iBacalao, open Homework → Setup and create a one-time pairing code. It expires after ten minutes and can be used once. It is not the long-lived agent token. Pairing can be completed while assignment processing is paused.
+### 2. Pair this computer
 
-On the computer that will run the worker, run:
+In iBacalao, open **Homework → Setup** and create a one-time pairing code. It expires after ten minutes and can be used once.
+
+Run the pairing command:
 
 ```bash
 npm run pair
 ```
 
-Enter the same iBacalao server URL shown in Homework settings and paste the pairing code. The worker exchanges it directly with iBacalao and saves the long-lived token and server URL to `.env` with owner-only permissions. The browser never receives the agent token. Reload `.env` in your shell before starting the worker, and never commit `.env`.
+Enter the same server URL shown in Homework settings, then paste the code. The worker exchanges it directly with iBacalao and saves the server URL and long-lived token to `.env` with owner-only permissions. The token is not printed or sent through the browser. A new pairing rotates the previous agent token.
 
-## MCP mode (use your AI subscription)
+Do not commit `.env`. It is ignored by Git.
 
-Pair the worker on this computer first. Then add this server to your MCP-capable AI app (example config), copying the token from the local `.env` file into the MCP environment:
+### 3. Check the connection
+
+The worker can report a heartbeat while processing is paused. To run API mode, configure your model endpoint as described below, load `.env` into your shell, and run `npm run once` or `npm start`. The current integration will report that drafting is paused; it will not send assignment content to the configured model.
+
+```bash
+set -a
+. ./.env
+set +a
+npm run once   # one claim/health cycle
+# or:
+npm start      # keep polling and reporting health
+```
+
+For a Vercel preview, enter that exact preview deployment URL when `npm run pair` asks for the server URL. The worker saves it for later requests.
+
+## MCP mode
+
+After pairing, add the server to an MCP-capable AI app. Replace both paths with the absolute path to your clone. Copy `IBACALAO_BASE_URL` and `IBACALAO_AGENT_TOKEN` from your local `.env` into the app configuration, and protect the configuration because it contains the long-lived token.
 
 ```json
 {
@@ -52,53 +116,41 @@ Pair the worker on this computer first. Then add this server to your MCP-capable
 }
 ```
 
-Replace both paths with the absolute path in your clone. Copy both `IBACALAO_BASE_URL` and `IBACALAO_AGENT_TOKEN` from the local `.env` created by `npm run pair`; this keeps preview pairings pointed at the same preview app. Run `npm ci` there first so the local `tsx` executable exists.
+The MCP server registers `claim_homework_job`, `submit_homework_draft`, and `fail_homework_job`, and can report health. Currently, `claim_homework_job` returns a paused message before it returns a prompt or job-scoped claim token. The completion tool sends the legacy HTML format, which the current iBacalao integration rejects. It never submits work to a school platform.
 
-When DOCX-preserving processing is enabled by the server, ask your AI app to claim the next homework job, write a draft, and save it for review. It uses three tools: `claim_homework_job`, `submit_homework_draft`, `fail_homework_job`. The current iBacalao integration returns a clear paused response before exposing any assignment content. The AI work happens inside your own subscription. Use a chat that has no other powerful tools enabled (files, shell, browser), because assignment text is untrusted input.
+## API and local-model mode
 
-## API-key mode
+`npm start` runs the API worker. It uses your own API key or an OpenAI-compatible model endpoint. Configure model settings in the local `.env` created by `npm run pair`:
 
-```bash
-cp .env.example .env   # edit with your values
-npm run pair           # enter the app's one-time pairing code
-set -a                 # macOS/Linux bash or zsh: export values from .env
-. ./.env
-set +a
-npm run once           # one job
-npm start              # keep polling
-```
+| Variable | Purpose |
+|---|---|
+| `IBACALAO_BASE_URL` | iBacalao server URL, saved by pairing. HTTPS is required except for localhost. |
+| `IBACALAO_AGENT_TOKEN` | Long-lived token, saved by pairing. Keep it secret. |
+| `IBACALAO_LLM_BASE_URL` | OpenAI-compatible `/chat/completions` endpoint. Leave blank to use OpenAI's default when an API key is set. |
+| `IBACALAO_LLM_API_KEY` | Your key for the configured model endpoint. Local model servers may not need one. |
+| `IBACALAO_LLM_MODEL` | Model name sent to the endpoint. |
+| `IBACALAO_LLM_MAX_TOKENS` | Output cap per draft; defaults to 8,000 and accepts values from 1 to 32,000. |
 
-The scripts read environment variables from the process; they do not load `.env` themselves. On Windows, set the variables in your shell or MCP app configuration instead.
+See [.env.example](.env.example) for the model settings template. The scripts read variables from the process and do not load `.env` automatically. On Windows, set them in your shell or MCP app configuration.
 
-For a Vercel preview, enter that exact preview deployment URL when `npm run pair` asks for the server URL. The command saves it so later worker requests use the same app.
+## Privacy and security
 
-`IBACALAO_LLM_MAX_TOKENS` caps output per draft so a bad job cannot run up your bill.
+- **Pairing stays local.** The worker exchanges the short-lived code directly with iBacalao. The server returns the long-lived token to the worker, which writes it to `.env` with owner-only permissions.
+- **You choose the model service.** In API mode, the full assignment prompt is sent to the configured endpoint when the server provides one. In MCP mode, the MCP host and its model provider may receive the prompt and job-scoped claim token. The current paused response contains neither.
+- **Protect credentials.** The agent token is required for iBacalao requests. Your model key is sent to the endpoint you configure. Do not commit tokens, API keys, `.env` files, logs, or real student data.
+- **Network requests are constrained.** Non-local server URLs require HTTPS, redirects are refused, and upstream responses are size-limited. Unsandboxed local AI CLI execution is disabled.
+- **The server must sanitize generated HTML.** The legacy protocol requires server-side sanitization before storage or rendering. The local worker does not sanitize HTML itself, and HTML is not a DOCX round trip. See [docs/PROTOCOL.md](docs/PROTOCOL.md).
 
-For the local Ping Bot, an optional model name in iBacalao's Homework settings overrides `IBACALAO_LLM_MODEL` for that job. Student writing instructions are included in the prompt by iBacalao. The model endpoint address and API key stay in the Ping Bot's local environment; leaving the model setting blank uses the local model value (or `gpt-4o-mini`).
-
-The API worker prints its current state without logging assignment titles. For example:
-
-```text
-[homework-agent] Starting API mode (continuous polling every 15 seconds).
-[homework-agent] Connected to https://app.ibacalao.com; no assignments are waiting. Checking again in 15 seconds.
-[homework-agent] Claimed job job-123; generating draft.
-[homework-agent] Draft saved for review. Saved job job-123 as ready_for_review. The school platform was not changed.
-```
-
-If generation fails, the worker reports whether it confirmed releasing the job. If it cannot confirm, check the assignment in iBacalao before retrying.
-
-## Self-hosting a different server
-
-The bot speaks a small HTTP protocol, documented in [docs/PROTOCOL.md](docs/PROTOCOL.md).
+For vulnerability reports, follow [SECURITY.md](SECURITY.md).
 
 ## Responsible use
 
-Drafts are a starting point for your own work. Follow your school's academic integrity rules. You are responsible for what you submit.
+When assignment processing is enabled, treat generated work as a draft: review it, verify its accuracy, edit it, and follow your school's academic integrity rules. You are responsible for what you submit.
 
-## Develop
+## Development
 
 ```bash
-npm run check   # typecheck + tests, no network, no real keys
+npm run check   # TypeScript typecheck and tests; no network or real keys required
 ```
 
-See [SECURITY.md](SECURITY.md) to report a vulnerability. Licensed under the MIT License.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidance. Licensed under the [MIT License](LICENSE).
