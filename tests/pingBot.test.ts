@@ -111,7 +111,7 @@ test("Homework agent claims a job, calls the configured model endpoint, and send
     assert.equal(completion.engine, "test-endpoint");
     assert.equal(completion.model, "local-test-model");
     assert.deepEqual(completion.qaResult, { status: "self_checked", checks: [] });
-    assert.match(stdout, /Saved job-e2e-1 as ready_for_review/);
+    assert.match(stdout, /Saved job job-e2e-1 as ready_for_review/);
   } finally {
     server.close();
   }
