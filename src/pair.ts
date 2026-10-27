@@ -90,9 +90,9 @@ async function main(): Promise<void> {
   }
 
   const responseText = await readBoundedModelResponse(response, 64 * 1024);
-  type PairPayload = { token?: unknown; error?: unknown } | null;
-  let payload = null as PairPayload;
-  try { payload = JSON.parse(responseText) as PairPayload; } catch { /* handled below */ }
+  type PairingResponse = { token?: unknown; error?: unknown };
+  let payload: PairingResponse | null = null;
+  try { payload = JSON.parse(responseText) as PairingResponse; } catch { /* handled below */ }
   if (!response.ok) {
     const detail = typeof payload?.error === "string" ? payload.error : `HTTP ${response.status}`;
     throw new Error(`iBacalao pairing failed: ${detail}`);

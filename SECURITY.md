@@ -2,8 +2,8 @@
 
 ## Reporting a vulnerability
 
-Report vulnerabilities privately through GitHub: **Security → Advisories → Report a vulnerability**. If the form is unavailable, email `support@ibacalao.com` with the subject `Private security report` and ask for a secure reporting route. Do not include vulnerability details, tokens, API keys, logs, proof-of-concept code, or student data in that initial message.
+Use GitHub **Security → Advisories → Report a vulnerability** when private reporting is available. If the form is unavailable, email `support@ibacalao.com` with the subject `Private security report` and ask for a secure reporting route. Do not include vulnerability details, tokens, API keys, logs, proof-of-concept code, or student data in that initial message.
 
-Never post vulnerability details publicly, and never include real tokens, API keys, or student data in a report.
+Before making this repository public, maintainers must enable and verify a private vulnerability reporting route. Never post vulnerability details publicly, and never include real tokens, API keys, or student data in a report.
 
-Scope: this bot's handling of the model key, long-lived agent token, job-scoped claim tokens, assignment content, network requests, and model output. The iBacalao server must sanitize model-generated HTML before storing or rendering it; self-hosted servers must meet the same requirement.
+Scope: this local worker's handling of model keys, long-lived agent tokens, job-scoped claim tokens, assignment content, network requests, and generated DOCX files. The paired iBacalao server must validate DOCX packages and verify account ownership and the current claim before storing drafts. Self-hosted servers must enforce the same checks.
