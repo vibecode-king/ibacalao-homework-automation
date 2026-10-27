@@ -4,7 +4,7 @@ Worker health and job-processing requests send `Authorization: Bearer <agent tok
 
 ## Pair a local worker
 
-1. A signed-in student creates a pairing code in Homework settings. The server stores only its hash, and the code expires after ten minutes.
+1. A signed-in student creates a pairing code in Homework Overview. The server stores only its hash, and the code expires after ten minutes.
 2. The local worker sends `POST /api/agent/token/exchange` with `{ "code": "HWA-..." }`. Browser requests are rejected. The server atomically consumes the code and returns `{ "token": "agt_..." }` only to the worker request.
 3. The worker saves the token in its local `.env` with owner-only permissions. Exchanging the code rotates any previous agent token.
 

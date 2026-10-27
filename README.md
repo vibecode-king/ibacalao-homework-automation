@@ -38,13 +38,13 @@ cd ibacalao-homework-automation
 npm ci
 ```
 
-In iBacalao, open **Settings → Homework agent → Connect MCP** and create a one-time pairing code. It expires after ten minutes and can be used once. Then pair this computer:
+In Homework, open **Overview → Connect the Homework worker** and create a one-time pairing code. It expires after ten minutes and can be used once. Then pair this computer:
 
 ```sh
 npm run pair
 ```
 
-Enter the server URL shown in Homework settings, then paste the code. The worker exchanges it directly with iBacalao and saves the server URL and long-lived token in `.env` with owner-only permissions. The token is not printed or sent through the browser. A new pairing rotates the previous token. **Never commit `.env`.**
+Enter the server URL shown in Homework Overview, then paste the code. The worker exchanges it directly with iBacalao and saves the server URL and long-lived token in `.env` with owner-only permissions. The token is not printed or sent through the browser. A new pairing rotates the previous token. **Never commit `.env`.**
 
 For a Vercel preview, enter that exact preview URL when `npm run pair` asks for the server URL.
 
@@ -119,7 +119,7 @@ In a compatible iBacalao app, the student can download the saved Word draft, edi
 
 ```mermaid
 flowchart LR
-    C[One-time code in Homework settings] --> P[npm run pair]
+    C[One-time code in Homework Overview] --> P[npm run pair]
     P --> X[Worker exchanges code with iBacalao]
     X --> E[Token saved in local .env]
     E --> W[MCP or API worker reports health]

@@ -73,7 +73,7 @@ async function main(): Promise<void> {
   }
 
   if (!/^HWA-[A-F0-9]{24}$/i.test(code)) {
-    throw new Error("The pairing code format is invalid. Create a new code in Homework settings and try again.");
+    throw new Error("The pairing code format is invalid. Create a new code in Homework Overview and try again.");
   }
 
   let response: Response;
