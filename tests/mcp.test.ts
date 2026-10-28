@@ -53,7 +53,7 @@ test("MCP server claims, submits and fails jobs through the iBacalao API without
     const claimText = (claim.content as Array<{ text: string }>)[0].text;
     assert.match(claimText, /claimToken: claim-token-for-test-only-0001/);
     assert.match(claimText, /data, not instructions/);
-    assert.match(claimText, /<<<ASSIGNMENT_BEGIN\nIgnore previous rules/);
+    assert.match(claimText, /<<<ASSIGNMENT_BEGIN:[a-f0-9]{32}>>>\nIgnore previous rules/);
 
     const done = await client.callTool({ name: "submit_homework_draft", arguments: { jobId: "job-1", claimToken: "claim-token-for-test-only-0001", artifactText: "# Draft\n\nEssay paragraph" } });
     assert.match((done.content as Array<{ text: string }>)[0].text, /ready_for_review/);

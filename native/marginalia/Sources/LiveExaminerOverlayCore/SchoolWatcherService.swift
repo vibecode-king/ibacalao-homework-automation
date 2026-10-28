@@ -494,17 +494,18 @@ final class SchoolWatcherService {
         let process = Process()
         process.executableURL = nodeURL
         process.arguments = arguments
-        var environment = ProcessInfo.processInfo.environment
-        environment["PLAYWRIGHT_BROWSERS_PATH"] = browsersURL.path
-        // The script lives in the app bundle but its `playwright` require must
-        // resolve from the runtime folder, wherever that is.
-        environment["NODE_PATH"] = runtimeRoot.appendingPathComponent("node_modules").path
-        environment["IBACALAO_DESKTOP_BUNDLED"] = "1"
-        if let scraplingHelperURL,
-           FileManager.default.isExecutableFile(atPath: scraplingHelperURL.path) {
-            environment["IBACALAO_SCRAPLING_HELPER"] = scraplingHelperURL.path
+        // The watcher receives only its runtime paths and standard OS values.
+        // In particular, host API keys and NODE_OPTIONS never cross this boundary.
+        let helperPath = scraplingHelperURL.flatMap {
+            FileManager.default.isExecutableFile(atPath: $0.path) ? $0.path : nil
         }
-        process.environment = environment
+        process.environment = WatcherChildEnvironment.make(
+            parentEnvironment: ProcessInfo.processInfo.environment,
+            homeDirectory: FileManager.default.homeDirectoryForCurrentUser.path,
+            browsersPath: browsersURL.path,
+            nodeModulesPath: runtimeRoot.appendingPathComponent("node_modules").path,
+            scraplingHelperPath: helperPath
+        )
         return process
     }
 

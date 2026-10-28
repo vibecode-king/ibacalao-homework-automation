@@ -343,7 +343,7 @@ final class ShellWebCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, O
         // must keep its own host so QA creates the session in that deployment's
         // Better Auth environment instead of silently signing into production.
         let startHost = startURL.host?.lowercased() ?? ""
-        if !startHost.hasSuffix(".vercel.app") {
+        if !NativeHostPolicy.isTrustedPreviewHost(startHost) {
             components?.host = "www.ibacalao.com"
         }
         components?.scheme = "https"
@@ -393,7 +393,9 @@ final class ShellWebCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, O
 
         let allowedHosts: Set<String> = ["ibacalao.com", "www.ibacalao.com", "localhost", "127.0.0.1"]
         let host = url.host ?? ""
-        let isOwnHost = allowedHosts.contains(host) || host.hasSuffix(".ibacalao.com") || host.hasSuffix(".vercel.app")
+        let isOwnHost = allowedHosts.contains(host)
+            || host.hasSuffix(".ibacalao.com")
+            || NativeHostPolicy.isTrustedPreviewHost(host)
         if isOwnHost, NativeRoutes.isNativeStudentFeatureRoute(url) {
             let path = url.path + (url.query.map { "?\($0)" } ?? "")
             decisionHandler(.cancel)
@@ -707,9 +709,9 @@ final class ShellController: ObservableObject {
 
     /// Copy the desktop website session into KeyStore so Marginalia does not ask for a second login.
     func syncWebsiteSessionIntoKeyStore() async {
-        if URL(string: LLMClient.resolvedNativeAPIBaseURL)?.host?.lowercased().hasSuffix(".vercel.app") == true { return }
+        let apiHost = URL(string: LLMClient.resolvedNativeAPIBaseURL)?.host?.lowercased() ?? ""
+        if NativeHostPolicy.isTrustedPreviewHost(apiHost) { return }
         let cookies = await webView.configuration.websiteDataStore.httpCookieStore.allCookies()
-        let apiHost = URL(string: LLMClient.resolvedNativeAPIBaseURL)?.host ?? "www.ibacalao.com"
         let sessionCookies = cookies.filter { $0.name == "ib_session" && !$0.value.isEmpty }
         let matching = sessionCookies.first { cookie in
             let domain = cookie.domain.lowercased()
@@ -1137,7 +1139,7 @@ struct ShellView: View {
                 // Release QA builds may target an immutable Vercel preview. Keep
                 // the path override unavailable on the production API origin.
                 let host = URL(string: LLMClient.resolvedNativeAPIBaseURL)?.host?.lowercased() ?? ""
-                if host.hasSuffix(".vercel.app") {
+                if NativeHostPolicy.isTrustedPreviewHost(host) {
                     controller.load(path: override)
                     return
                 }

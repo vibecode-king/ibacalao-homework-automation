@@ -4,6 +4,13 @@ import { readBoundedModelResponse } from "./agentRunner";
 const MAX_AGENT_API_RESPONSE_BYTES = 2 * 1024 * 1024;
 const DOCX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
+export class AgentApiError extends Error {
+  constructor(readonly status: number, message: string) {
+    super("iBacalao agent API returned " + status + ": " + message);
+    this.name = "AgentApiError";
+  }
+}
+
 export function createAgentApiClient(baseUrl: string, token: string | undefined) {
   async function request<T>(path: string, body?: unknown): Promise<T> {
     if (!token) throw new Error("Set IBACALAO_AGENT_TOKEN in this terminal before starting the homework agent.");
@@ -29,7 +36,7 @@ export function createAgentApiClient(baseUrl: string, token: string | undefined)
     })();
     if (!response.ok) {
       const message = typeof payload?.error === "string" ? payload.error : `HTTP ${response.status}`;
-      throw new Error(`iBacalao agent API returned ${response.status}: ${message}`);
+      throw new AgentApiError(response.status, message);
     }
     return payload as T;
   }
@@ -63,7 +70,7 @@ export function createAgentApiClient(baseUrl: string, token: string | undefined)
         })();
         if (!response.ok) {
           const message = typeof payload?.error === "string" ? payload.error : "HTTP " + response.status;
-          throw new Error("iBacalao agent API returned " + response.status + ": " + message);
+          throw new AgentApiError(response.status, message);
         }
         return payload as T;
       } catch (error) {

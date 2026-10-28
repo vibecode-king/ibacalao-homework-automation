@@ -99,7 +99,7 @@ enum KeyStore {
 
     private static var isPreviewAPIHost: Bool {
         guard let host = URL(string: LLMClient.resolvedNativeAPIBaseURL)?.host?.lowercased() else { return false }
-        return host.hasSuffix(".vercel.app")
+        return NativeHostPolicy.isTrustedPreviewHost(host)
     }
 
     private static var isLocalAPIHost: Bool {

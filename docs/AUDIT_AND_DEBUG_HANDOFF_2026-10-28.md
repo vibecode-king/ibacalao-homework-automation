@@ -8,7 +8,7 @@
 cd /Users/joaquin/Documents/ibacalao-homework-automation
 git checkout isolate/desktop-app-and-watcher
 npm ci
-npm run check                                  # expect: tsc clean, 306 pass, 0 fail
+npm run check                                  # expect: tsc clean, 311 pass, 0 fail
 npm run watcher:bundle && ls -l dist/          # expect: watcher-daemon.cjs about 1.4 MB
 npm run release:check                          # expect: Release version OK: iBacalao 1.0.11 (13)
 cd native/marginalia && swift build -c debug   # expect: Build complete
@@ -21,7 +21,7 @@ Do not run `npm run desktop:build` (installs to `/Applications`). Do not push, m
 | Check | Result |
 |---|---|
 | Typecheck of worker, watcher, school code | clean |
-| Tests (worker 11, watcher and school 295) | 306 of 306 pass |
+| Local automated test suite | 311 of 311 pass |
 | `npm audit` (prod and dev) | 0 vulnerabilities |
 | Watcher daemon standalone esbuild bundle | builds, no website files needed |
 | Mac app `swift build -c debug` | builds |
@@ -44,7 +44,7 @@ Severity is for a student launch. File references are in this repo.
 
 **M4. Watcher daemon has no process-level crash handlers.** `scripts/watcher-daemon.ts` registers only `SIGINT` and `SIGTERM` (`:1121-1122`) and a `main().catch` (`:1216`). There is no `uncaughtException` or `unhandledRejection` handler. A stray rejection in a Playwright callback ends the process. The Mac supervisor restarts it with a budget and a circuit breaker (`SchoolWatcherService.swift` around `:459-472`), which limits the damage, but the owner's rule is that the watcher must never crash. Add handlers that log, mark the sync failed and keep the loop alive, with a test.
 
-**M5. The worker never runs against a real server, school or model in any test here.** All 306 tests are unit tests. No live pair, claim, draft, complete run exists (see Blocking).
+**M5. The worker never runs against a real server, school or model in any test here.** The 311 repository tests use local code and mocked endpoints. No live pair, claim, draft, complete run exists (see Blocking).
 
 ### Low
 
@@ -83,3 +83,24 @@ Full line-by-line review of `lib/school/*` and the 5,000+ line `scripts/watcher-
 1. M1, M2, M4 (small, testable, in this repo).
 2. M3 and L8 (Mac app).
 3. Blocking items 1 to 4 with the owner present.
+
+## Debug pass status, 2026-10-28
+
+M1, M2, M3, M4 and L8 were addressed on
+`isolate/desktop-app-and-watcher`, based on handoff commit `4c14e34`.
+
+- M1 now uses a cryptographically random delimiter for each MCP claim. The prompt test includes the old closing marker inside assignment text and confirms it does not close the block.
+- M2 now releases a claim after the server's permanent 400 or 413 completion rejection. Ambiguous 409 responses and network or 5xx failures keep the existing retry behavior.
+- M3 now trusts only the iBacalao Vercel preview pattern `ibacalao-git-*-vanos-projects-91d1222a.vercel.app` for native routing and preview-only behavior.
+- M4 now registers `uncaughtException` and `unhandledRejection` handlers. They log the error, mark the active or configured sync failed, and return control to the polling loop. Tests cover event dispatch and failure-state marking.
+- L8 now gives the watcher a small environment allowlist: its home and runtime paths, system PATH, optional TMPDIR, bundled-app flag, and packaged Scrapling helper. Parent API keys, watcher tokens and NODE_OPTIONS are excluded.
+
+Validation run after these changes:
+
+- `npm run check`: typecheck clean, 311 of 311 tests pass.
+- `npm run watcher:bundle`: bundle built at about 1.4 MB.
+- `npm run release:check`: Release version OK, iBacalao 1.0.11 (13).
+- `swift build -c debug`: build complete. It emitted the existing Keychain API deprecation warning.
+- Swift XCTest sources were added for the host policy and environment allowlist, but were not run; this machine's earlier check reported that XCTest is unavailable.
+
+The live staging pair/claim/draft/complete run remains unverified. This debug pass did not sign in, install the app or deploy. The release verdict remains **NO-GO** until the blockers above are resolved with the owner present.

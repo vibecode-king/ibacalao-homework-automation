@@ -28,7 +28,7 @@ Last verified against sources: 2026-10-28. This file states only what the source
 | Part | Path | What it does |
 |---|---|---|
 | Worker | `src/` | Pairs with a one-time code, reports health, claims a job, drafts through an MCP host or an OpenAI-compatible endpoint, uploads a DOCX. |
-| School watcher | `scripts/watcher-daemon.ts`, `lib/watcher/`, `lib/school/`, `lib/security/` | Detects assignment changes on school platforms (Learnbox and ManageBac adapters exist in `lib/watcher/adapters/`). Bundles standalone with esbuild. 306 repo tests pass. |
+| School watcher | `scripts/watcher-daemon.ts`, `lib/watcher/`, `lib/school/`, `lib/security/` | Detects assignment changes on school platforms (Learnbox and ManageBac adapters exist in `lib/watcher/adapters/`). Bundles standalone with esbuild. 311 repo tests pass. |
 | Mac app | `native/marginalia/` | SwiftPM app that embeds the web shell and runs the bundled watcher daemon. Compiles with `swift build`. |
 | Legacy shell and Safari bridge | `native/LiveExaminerOverlay/`, `native/safari-school-bridge/` | Carried over because the release scripts and icon assets reference them. |
 | Scrapling helper | `tools/scrapling-repair/` | Python repair helper used by the watcher runtime packaging. |

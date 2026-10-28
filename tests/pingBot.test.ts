@@ -198,3 +198,90 @@ test("Homework agent rejects an oversized agent API response before parsing or c
     server.close();
   }
 });
+
+test("Ping Bot releases a job when the server rejects a completion with a non-retryable 400", async () => {
+  let claimCount = 0;
+  let modelCount = 0;
+  let completionCount = 0;
+  let failedJob: Record<string, unknown> | null = null;
+  const server = createServer(async (req, res) => {
+    const bodyBytes = await readBody(req);
+    if (req.method === "POST" && req.url === "/v1/chat/completions") {
+      modelCount += 1;
+      send(res, 200, {
+        model: "local-test-model",
+        choices: [{ message: { content: JSON.stringify({
+          artifactText: "# Draft\n\nA reviewable draft",
+          engine: "test-endpoint",
+          model: "local-test-model",
+          qaResult: { status: "self_checked", checks: [] },
+        }) } }],
+      });
+      return;
+    }
+    if (req.method === "POST" && req.url === "/api/agent/jobs/claim") {
+      claimCount += 1;
+      send(res, 200, { job: {
+        id: "job-invalid-docx",
+        title: "History comparison",
+        claimToken: "claim-token-for-test-only-0002",
+        prompt: "Write a short comparison.",
+      } });
+      return;
+    }
+    if (req.method === "POST" && req.url === "/api/agent/jobs/job-invalid-docx/complete") {
+      completionCount += 1;
+      send(res, 400, { error: "invalid_docx" });
+      return;
+    }
+    if (req.method === "POST" && req.url === "/api/agent/jobs/job-invalid-docx/fail") {
+      failedJob = JSON.parse(bodyBytes.toString("utf8")) as Record<string, unknown>;
+      send(res, 200, { job: { id: "job-invalid-docx", state: "released" } });
+      return;
+    }
+    if (req.method === "POST" && req.url === "/api/agent/health") {
+      send(res, 200, { recorded: true });
+      return;
+    }
+    send(res, 404, { error: "Unexpected synthetic request" });
+  });
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  const address = server.address();
+  assert.ok(address && typeof address !== "string");
+
+  const env: NodeJS.ProcessEnv = {
+    ...process.env,
+    IBACALAO_BASE_URL: "http://127.0.0.1:" + address.port,
+    IBACALAO_AGENT_TOKEN: "agt_test_token",
+    IBACALAO_AGENT_ID: "homework-agent-rejected-completion",
+    IBACALAO_LLM_BASE_URL: "http://127.0.0.1:" + address.port + "/v1",
+    IBACALAO_LLM_MODEL: "local-test-model",
+    IBACALAO_LLM_API_KEY: "local-only-test-key",
+  };
+  const script = join(process.cwd(), "src/ping.ts");
+  try {
+    const child = spawn(process.execPath, ["--import", "tsx", script, "--once"], {
+      cwd: process.cwd(),
+      env,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    let stdout = "";
+    let stderr = "";
+    child.stdout.setEncoding("utf8").on("data", (chunk: string) => { stdout += chunk; });
+    child.stderr.setEncoding("utf8").on("data", (chunk: string) => { stderr += chunk; });
+    const [code] = await once(child, "close") as [number | null];
+    assert.equal(code, 1, "a rejected draft must be reported as unsuccessful");
+    assert.equal(claimCount, 1);
+    assert.equal(modelCount, 1);
+    assert.equal(completionCount, 1, "a permanent 400 must not retry the same completion");
+    assert.deepEqual(failedJob, {
+      claimToken: "claim-token-for-test-only-0002",
+      error: "Draft upload rejected: iBacalao agent API returned 400: invalid_docx",
+    });
+    assert.match(stderr, /job released/);
+    assert.match(stdout, /Claimed job job-invalid-docx/);
+  } finally {
+    server.close();
+  }
+});

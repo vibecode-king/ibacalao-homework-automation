@@ -1,7 +1,7 @@
 import { hostname } from "node:os";
 import { setTimeout as sleep } from "node:timers/promises";
 import { runConfiguredAssignmentAgent } from "./agentRunner";
-import { createAgentApiClient } from "./client";
+import { AgentApiError, createAgentApiClient } from "./client";
 import { buildDocxFromText } from "./docx";
 import { normalizeAgentServiceBaseUrl } from "./network";
 
@@ -87,10 +87,36 @@ async function processOne(): Promise<boolean> {
       model: output.model,
       qaResult: output.qaResult,
     };
-    // A completion request can persist the artifact before returning an error.
-    // Retrying the identical payload is safe; calling /fail here could consume a
-    // claim token that the completion already cleared.
-    const saved = await submitCompletion<{ job: { id: string; state: string }; message: string }>(completionPath, document, completionMetadata);
+    let saved: { job: { id: string; state: string }; message: string };
+    try {
+      // A completion request can persist the artifact before returning an error.
+      // Retrying the identical payload is safe; calling /fail for an ambiguous
+      // response could consume a claim token that the completion already cleared.
+      saved = await submitCompletion<{ job: { id: string; state: string }; message: string }>(completionPath, document, completionMetadata);
+    } catch (error) {
+      // The server contract rejects invalid/oversized documents before saving.
+      // These final 4xx responses cannot succeed by retrying; release the lease
+      // so it does not sit idle until expiry and trigger another model call.
+      if (error instanceof AgentApiError && (error.status === 400 || error.status === 413)) {
+        const reason = ("Draft upload rejected: " + error.message).slice(0, 500);
+        let releaseConfirmed = false;
+        try {
+          await request("/api/agent/jobs/" + encodeURIComponent(job.id) + "/fail", {
+            claimToken: job.claimToken,
+            error: reason,
+          });
+          releaseConfirmed = true;
+        } catch {
+          // Report uncertainty rather than claiming the lease was released.
+        }
+        throw new Error(
+          "Draft upload rejected for job " + job.id + "; "
+          + (releaseConfirmed ? "job released. " : "job release could not be confirmed. ")
+          + error.message,
+        );
+      }
+      throw error;
+    }
     console.log(`[homework-agent] Draft saved for review. Saved job ${saved.job.id} as ${saved.job.state}. The school platform was not changed.`);
     activeJobId = null;
     await request("/api/agent/health", { agentId, status: "idle", pollIntervalMs: pollMs }).catch(() => undefined);

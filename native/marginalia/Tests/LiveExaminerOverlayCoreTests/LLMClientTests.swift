@@ -39,6 +39,19 @@ final class LLMClientTests: XCTestCase {
         )
     }
 
+    func testOnlyTheIbacalaoProjectPreviewHostIsTrusted() {
+        XCTAssertTrue(NativeHostPolicy.isTrustedPreviewHost(
+            "ibacalao-git-dev-vanos-projects-91d1222a.vercel.app"
+        ))
+        XCTAssertTrue(NativeHostPolicy.isTrustedPreviewHost(
+            "ibacalao-git-fix-homework-worker-vanos-projects-91d1222a.vercel.app"
+        ))
+        XCTAssertFalse(NativeHostPolicy.isTrustedPreviewHost("anything.vercel.app"))
+        XCTAssertFalse(NativeHostPolicy.isTrustedPreviewHost(
+            "ibacalao-git-dev-other-team-91d1222a.vercel.app"
+        ))
+    }
+
     func testTipDisplayIsPlainAndActionFirst() throws {
         let raw = """
         {"subject":"Biology","confidence":"high","problem":"The conclusion is too broad — it ignores uncertainty","section":"Conclusion","whyItMatters":"The result may not support the claim","fix":"Rewrite the final sentence using the uncertainty range","doneWhen":"The final sentence names the range and answers the question"}

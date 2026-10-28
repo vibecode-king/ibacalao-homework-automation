@@ -37,6 +37,7 @@ import { nextDelayMs, applyOutcome } from "../lib/watcher/schedule";
 import { classifySync, type WatcherSyncMode } from "../lib/watcher/syncMode";
 import { fileDaemonLockDeps, parentIsGone, takeOverDaemonLock } from "../lib/watcher/singleInstance";
 import { emptyHealth, type CrawlOutcome, type PlatformAdapter, type WatcherHealth, type WatcherPlatform } from "../lib/watcher/types";
+import { installWatcherProcessErrorHandlers, markUnexpectedSyncFailure } from "../lib/watcher/processErrorHandlers";
 import type { SchoolActionCapability, SchoolConnectionStatus } from "../lib/school/types";
 import { overlayPassiveStatus, higherPriorityAction } from "../lib/school/status";
 import { deriveSchoolStudentReport } from "../lib/school/studentReport";
@@ -1093,6 +1094,29 @@ async function resolveToken(args: string[]): Promise<string | null> {
   });
 }
 
+type ActiveSyncContext =
+  | {
+      kind: "adapter";
+      adapter: PlatformAdapter;
+      connection: SchoolPlatformConnection | null;
+      failureCountAtStart: number;
+      errorMessage?: string;
+      failureAt?: string;
+    }
+  | {
+      kind: "passive";
+      connection: SchoolPlatformConnection;
+      errorMessage?: string;
+      failureAt?: string;
+    };
+
+function processFailureMessage(error: unknown): string {
+  const message = error instanceof Error
+    ? error.name + ": " + error.message
+    : String(error);
+  return (message || "Unexpected watcher process error.").slice(0, 500);
+}
+
 async function runPollingLoop(args: string[], baseUrl: string, token: string): Promise<void> {
   const once = args.includes("--once");
   const configuredConnection = loadSchoolConnection();
@@ -1105,6 +1129,62 @@ async function runPollingLoop(args: string[], baseUrl: string, token: string): P
   // CLI run never takes the lock, so it can't stop the app's own watcher.
   const lock = once ? null : fileDaemonLockDeps(join(STATE_DIR, "daemon.pid"));
   const caffeine = once ? null : keepAwake();
+  let activeSync: ActiveSyncContext | null = null;
+  const persistProcessFailure = (context: ActiveSyncContext) => {
+    if (!context.errorMessage || !context.failureAt) return;
+    if (context.kind === "adapter") {
+      const state = loadState(context.adapter.platform);
+      if (state.health.lastError === context.errorMessage && state.health.lastAttemptAt === context.failureAt) return;
+      state.health = markUnexpectedSyncFailure(
+        state.health,
+        context.errorMessage,
+        context.failureAt,
+        context.failureCountAtStart,
+      );
+      saveState(context.adapter.platform, state);
+      saveWatcherStatus(
+        context.adapter,
+        state.health,
+        context.connection,
+        state.health.authRequired ? "reauth_required" : "connector_stale",
+      );
+      return;
+    }
+
+    const current = loadSchoolStatus() ?? statusForConnection(context.connection);
+    if (current.actionReason === "connector_stale" && current.lastObservedAt === context.failureAt) return;
+    const actionReason = current.actionReason === "reauth_required" || current.actionReason === "challenge_paused"
+      ? current.actionReason
+      : "connector_stale";
+    saveSchoolStatus({
+      ...current,
+      connected: false,
+      actionReason,
+      lastObservedAt: context.failureAt,
+      recipe: current.recipe ? { ...current.recipe, state: "stale" } : { state: "stale" },
+    });
+  };
+  installWatcherProcessErrorHandlers(process, (_, error) => {
+    let context = activeSync;
+    if (!context && configuredConnection) {
+      context = configuredAdapter
+        ? {
+            kind: "adapter",
+            adapter: configuredAdapter,
+            connection: configuredConnection,
+            failureCountAtStart: loadState(configuredAdapter.platform).health.consecutiveFailures,
+          }
+        : { kind: "passive", connection: configuredConnection };
+    }
+    if (!context) return;
+    context.errorMessage ??= processFailureMessage(error);
+    context.failureAt ??= new Date().toISOString();
+    try {
+      persistProcessFailure(context);
+    } catch (reportError) {
+      console.error("[school-watcher] could not persist the failed sync status:", reportError);
+    }
+  });
   let stopping = false;
   const shutdown = () => {
     if (stopping) return;
@@ -1152,6 +1232,13 @@ async function runPollingLoop(args: string[], baseUrl: string, token: string): P
         // daemon is alive, and its stale lastSuccessAt tells the server why.
         await heartbeat(ingestKey, loadState(adapter.platform).health.lastSuccessAt, baseUrl, token);
         if (pausedPlatforms.has(adapter.platform)) continue;
+        const syncContext: ActiveSyncContext = {
+          kind: "adapter",
+          adapter,
+          connection: configuredConnection,
+          failureCountAtStart: loadState(adapter.platform).health.consecutiveFailures,
+        };
+        activeSync = syncContext;
         try {
           const delay = await pollOnce(adapter, baseUrl, token);
           if (delay === null) {
@@ -1164,6 +1251,13 @@ async function runPollingLoop(args: string[], baseUrl: string, token: string): P
           // record already governs when it is tried again.
           console.error(`[${adapter.platform}] poll threw:`, error);
           nextWait = Math.min(nextWait, 5 * 60 * 1000);
+        } finally {
+          try {
+            persistProcessFailure(syncContext);
+          } catch (reportError) {
+            console.error("[school-watcher] could not persist the failed sync status:", reportError);
+          }
+          if (activeSync === syncContext) activeSync = null;
         }
       }
       maybeApplyReliability(configuredConnection);
@@ -1175,6 +1269,8 @@ async function runPollingLoop(args: string[], baseUrl: string, token: string): P
         // Proof of life comes first: a passive run that throws still means the
         // daemon is alive, and that must read as failing, not offline.
         await heartbeat(sourceKeyForLoadedConnection(configuredConnection), loadSchoolStatus()?.lastSuccessAt ?? null, baseUrl, token);
+        const syncContext: ActiveSyncContext = { kind: "passive", connection: configuredConnection };
+        activeSync = syncContext;
         try {
           nextWait = Math.min(nextWait, await processPassiveConnection(configuredConnection, baseUrl, token));
         } catch (error) {
@@ -1190,6 +1286,13 @@ async function runPollingLoop(args: string[], baseUrl: string, token: string): P
           }));
           console.error(`[${sourceKeyForLoadedConnection(configuredConnection)}] passive engine threw:`, error);
           nextWait = Math.min(nextWait, 5_000);
+        } finally {
+          try {
+            persistProcessFailure(syncContext);
+          } catch (reportError) {
+            console.error("[school-watcher] could not persist the failed sync status:", reportError);
+          }
+          if (activeSync === syncContext) activeSync = null;
         }
       }
       if (once) return;
