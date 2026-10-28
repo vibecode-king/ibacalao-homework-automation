@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Direct/Developer ID distribution: no App Sandbox. Matches the
+	     existing ../Entitlements-Release.plist used by build_app.sh's
+	     Developer ID channel. No get-task-allow (release-only). -->
+</dict>
+</plist>

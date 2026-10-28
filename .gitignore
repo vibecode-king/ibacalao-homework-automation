@@ -5,3 +5,11 @@ node_modules/
 *.log
 .worktrees/
 .DS_Store
+
+# desktop app build outputs and secrets
+native/**/.build/
+native/**/build/
+native/**/DerivedData/
+native/marginalia/.leo_keychain_password
+dist/
+*.dmg

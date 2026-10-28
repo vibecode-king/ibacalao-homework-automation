@@ -1,0 +1,627 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		D23F4388305A27C8004A0B62 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D23F4387305A27C8004A0B62 /* AppDelegate.swift */; };
+		D23F438C305A27C8004A0B62 /* Main.html in Resources */ = {isa = PBXBuildFile; fileRef = D23F438A305A27C8004A0B62 /* Main.html */; };
+		D23F438E305A27C8004A0B62 /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = D23F438D305A27C8004A0B62 /* Icon.png */; };
+		D23F4390305A27C8004A0B62 /* Style.css in Resources */ = {isa = PBXBuildFile; fileRef = D23F438F305A27C8004A0B62 /* Style.css */; };
+		D23F4392305A27C8004A0B62 /* Script.js in Resources */ = {isa = PBXBuildFile; fileRef = D23F4391305A27C8004A0B62 /* Script.js */; };
+		D23F4394305A27C8004A0B62 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D23F4393305A27C8004A0B62 /* ViewController.swift */; };
+		D23F4397305A27C8004A0B62 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = D23F4395305A27C8004A0B62 /* Main.storyboard */; };
+		D23F4399305A27C8004A0B62 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D23F4398305A27C8004A0B62 /* Assets.xcassets */; };
+		D23F43A0305A27C9004A0B62 /* iBacalao School Bridge Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D23F439F305A27C9004A0B62 /* iBacalao School Bridge Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		D23F43A5305A27C9004A0B62 /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D23F43A4305A27C9004A0B62 /* SafariWebExtensionHandler.swift */; };
+		A11B0001305A27C9004A0B62 /* SchoolBridgeProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11B0000305A27C9004A0B62 /* SchoolBridgeProtocol.swift */; };
+		D23F43B6305A27C9004A0B62 /* tests in Resources */ = {isa = PBXBuildFile; fileRef = D23F43B1305A27C9004A0B62 /* tests */; };
+		D23F43B7305A27C9004A0B62 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = D23F43B2305A27C9004A0B62 /* README.md */; };
+		D23F43B8305A27C9004A0B62 /* icons in Resources */ = {isa = PBXBuildFile; fileRef = D23F43B3305A27C9004A0B62 /* icons */; };
+		D23F43B9305A27C9004A0B62 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = D23F43B4305A27C9004A0B62 /* manifest.json */; };
+		D23F43BA305A27C9004A0B62 /* src in Resources */ = {isa = PBXBuildFile; fileRef = D23F43B5305A27C9004A0B62 /* src */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		D23F43A1305A27C9004A0B62 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D23F437C305A27C8004A0B62 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D23F439E305A27C9004A0B62;
+			remoteInfo = "iBacalao School Bridge Extension";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		D23F43AC305A27C9004A0B62 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				D23F43A0305A27C9004A0B62 /* iBacalao School Bridge Extension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		D23F4384305A27C8004A0B62 /* iBacalao School Bridge.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "iBacalao School Bridge.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		D23F4387305A27C8004A0B62 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		D23F438B305A27C8004A0B62 /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = Base; path = Base.lproj/Main.html; sourceTree = "<group>"; };
+		D23F438D305A27C8004A0B62 /* Icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon.png; sourceTree = "<group>"; };
+		D23F438F305A27C8004A0B62 /* Style.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = Style.css; sourceTree = "<group>"; };
+		D23F4391305A27C8004A0B62 /* Script.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = Script.js; sourceTree = "<group>"; };
+		D23F4393305A27C8004A0B62 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		D23F4396305A27C8004A0B62 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		D23F4398305A27C8004A0B62 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		D23F439A305A27C8004A0B62 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		D23F439F305A27C9004A0B62 /* iBacalao School Bridge Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "iBacalao School Bridge Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		D23F43A4305A27C9004A0B62 /* SafariWebExtensionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariWebExtensionHandler.swift; sourceTree = "<group>"; };
+		A11B0000305A27C9004A0B62 /* SchoolBridgeProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SchoolBridgeProtocol.swift; path = "../../marginalia/Sources/SchoolBridgeProtocol/SchoolBridgeProtocol.swift"; sourceTree = SOURCE_ROOT; };
+		D23F43A6305A27C9004A0B62 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		D23F43B1305A27C9004A0B62 /* tests */ = {isa = PBXFileReference; lastKnownFileType = folder; name = tests; path = "../../../../browser-extension/school-bridge/tests"; sourceTree = "<group>"; };
+		D23F43B2305A27C9004A0B62 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = "../../../../browser-extension/school-bridge/README.md"; sourceTree = "<group>"; };
+		D23F43B3305A27C9004A0B62 /* icons */ = {isa = PBXFileReference; lastKnownFileType = folder; name = icons; path = "../../../../browser-extension/school-bridge/icons"; sourceTree = "<group>"; };
+		D23F43B4305A27C9004A0B62 /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = manifest.json; path = "../../../../browser-extension/school-bridge/manifest.json"; sourceTree = "<group>"; };
+		D23F43B5305A27C9004A0B62 /* src */ = {isa = PBXFileReference; lastKnownFileType = folder; name = src; path = "../../../../browser-extension/school-bridge/src"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D23F4381305A27C8004A0B62 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D23F439C305A27C9004A0B62 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		D23F437B305A27C8004A0B62 = {
+			isa = PBXGroup;
+			children = (
+				D23F4386305A27C8004A0B62 /* iBacalao School Bridge */,
+				D23F43A3305A27C9004A0B62 /* iBacalao School Bridge Extension */,
+				D23F4385305A27C8004A0B62 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		D23F4385305A27C8004A0B62 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D23F4384305A27C8004A0B62 /* iBacalao School Bridge.app */,
+				D23F439F305A27C9004A0B62 /* iBacalao School Bridge Extension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		D23F4386305A27C8004A0B62 /* iBacalao School Bridge */ = {
+			isa = PBXGroup;
+			children = (
+				D23F4387305A27C8004A0B62 /* AppDelegate.swift */,
+				D23F4393305A27C8004A0B62 /* ViewController.swift */,
+				D23F4395305A27C8004A0B62 /* Main.storyboard */,
+				D23F4398305A27C8004A0B62 /* Assets.xcassets */,
+				D23F439A305A27C8004A0B62 /* Info.plist */,
+				D23F4389305A27C8004A0B62 /* Resources */,
+			);
+			path = "iBacalao School Bridge";
+			sourceTree = "<group>";
+		};
+		D23F4389305A27C8004A0B62 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				D23F438A305A27C8004A0B62 /* Main.html */,
+				D23F438D305A27C8004A0B62 /* Icon.png */,
+				D23F438F305A27C8004A0B62 /* Style.css */,
+				D23F4391305A27C8004A0B62 /* Script.js */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		D23F43A3305A27C9004A0B62 /* iBacalao School Bridge Extension */ = {
+			isa = PBXGroup;
+			children = (
+				D23F43B0305A27C9004A0B62 /* Resources */,
+				D23F43A4305A27C9004A0B62 /* SafariWebExtensionHandler.swift */,
+				A11B0000305A27C9004A0B62 /* SchoolBridgeProtocol.swift */,
+				D23F43A6305A27C9004A0B62 /* Info.plist */,
+			);
+			path = "iBacalao School Bridge Extension";
+			sourceTree = "<group>";
+		};
+		D23F43B0305A27C9004A0B62 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				D23F43B1305A27C9004A0B62 /* tests */,
+				D23F43B2305A27C9004A0B62 /* README.md */,
+				D23F43B3305A27C9004A0B62 /* icons */,
+				D23F43B4305A27C9004A0B62 /* manifest.json */,
+				D23F43B5305A27C9004A0B62 /* src */,
+			);
+			name = Resources;
+			path = "iBacalao School Bridge Extension";
+			sourceTree = SOURCE_ROOT;
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		D23F4383305A27C8004A0B62 /* iBacalao School Bridge */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D23F43AD305A27C9004A0B62 /* Build configuration list for PBXNativeTarget "iBacalao School Bridge" */;
+			buildPhases = (
+				D23F4380305A27C8004A0B62 /* Sources */,
+				D23F4381305A27C8004A0B62 /* Frameworks */,
+				D23F4382305A27C8004A0B62 /* Resources */,
+				D23F43AC305A27C9004A0B62 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D23F43A2305A27C9004A0B62 /* PBXTargetDependency */,
+			);
+			name = "iBacalao School Bridge";
+			packageProductDependencies = (
+			);
+			productName = "iBacalao School Bridge";
+			productReference = D23F4384305A27C8004A0B62 /* iBacalao School Bridge.app */;
+			productType = "com.apple.product-type.application";
+		};
+		D23F439E305A27C9004A0B62 /* iBacalao School Bridge Extension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D23F43A9305A27C9004A0B62 /* Build configuration list for PBXNativeTarget "iBacalao School Bridge Extension" */;
+			buildPhases = (
+				D23F439B305A27C9004A0B62 /* Sources */,
+				D23F439C305A27C9004A0B62 /* Frameworks */,
+				D23F439D305A27C9004A0B62 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "iBacalao School Bridge Extension";
+			packageProductDependencies = (
+			);
+			productName = "iBacalao School Bridge Extension";
+			productReference = D23F439F305A27C9004A0B62 /* iBacalao School Bridge Extension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D23F437C305A27C8004A0B62 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2660;
+				LastUpgradeCheck = 2660;
+				TargetAttributes = {
+					D23F4383305A27C8004A0B62 = {
+						CreatedOnToolsVersion = 26.6;
+					};
+					D23F439E305A27C9004A0B62 = {
+						CreatedOnToolsVersion = 26.6;
+					};
+				};
+			};
+			buildConfigurationList = D23F437F305A27C8004A0B62 /* Build configuration list for PBXProject "iBacalao School Bridge" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = D23F437B305A27C8004A0B62;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = D23F4385305A27C8004A0B62 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D23F4383305A27C8004A0B62 /* iBacalao School Bridge */,
+				D23F439E305A27C9004A0B62 /* iBacalao School Bridge Extension */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		D23F4382305A27C8004A0B62 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D23F438E305A27C8004A0B62 /* Icon.png in Resources */,
+				D23F4397305A27C8004A0B62 /* Main.storyboard in Resources */,
+				D23F4392305A27C8004A0B62 /* Script.js in Resources */,
+				D23F438C305A27C8004A0B62 /* Main.html in Resources */,
+				D23F4399305A27C8004A0B62 /* Assets.xcassets in Resources */,
+				D23F4390305A27C8004A0B62 /* Style.css in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D23F439D305A27C9004A0B62 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D23F43B9305A27C9004A0B62 /* manifest.json in Resources */,
+				D23F43B8305A27C9004A0B62 /* icons in Resources */,
+				D23F43BA305A27C9004A0B62 /* src in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D23F4380305A27C8004A0B62 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D23F4394305A27C8004A0B62 /* ViewController.swift in Sources */,
+				D23F4388305A27C8004A0B62 /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D23F439B305A27C9004A0B62 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D23F43A5305A27C9004A0B62 /* SafariWebExtensionHandler.swift in Sources */,
+				A11B0001305A27C9004A0B62 /* SchoolBridgeProtocol.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		D23F43A2305A27C9004A0B62 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D23F439E305A27C9004A0B62 /* iBacalao School Bridge Extension */;
+			targetProxy = D23F43A1305A27C9004A0B62 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		D23F438A305A27C8004A0B62 /* Main.html */ = {
+			isa = PBXVariantGroup;
+			children = (
+				D23F438B305A27C8004A0B62 /* Base */,
+			);
+			name = Main.html;
+			sourceTree = "<group>";
+		};
+		D23F4395305A27C8004A0B62 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				D23F4396305A27C8004A0B62 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		D23F43A7305A27C9004A0B62 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.5;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		D23F43A8305A27C9004A0B62 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.5;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		D23F43AA305A27C9004A0B62 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "iBacalao School Bridge Extension/iBacalao School Bridge Extension.entitlements";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 3826C72RFN;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "iBacalao School Bridge Extension/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "iBacalao School Bridge Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.ibacalao.SchoolBridge.Extension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		D23F43AB305A27C9004A0B62 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "iBacalao School Bridge Extension/iBacalao School Bridge Extension.entitlements";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 3826C72RFN;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "iBacalao School Bridge Extension/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "iBacalao School Bridge Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.ibacalao.SchoolBridge.Extension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		D23F43AE305A27C9004A0B62 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "iBacalao School Bridge/iBacalao School Bridge.entitlements";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 3826C72RFN;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "iBacalao School Bridge/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "iBacalao School Bridge";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.ibacalao.SchoolBridge;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		D23F43AF305A27C9004A0B62 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "iBacalao School Bridge/iBacalao School Bridge.entitlements";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 3826C72RFN;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "iBacalao School Bridge/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "iBacalao School Bridge";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.ibacalao.SchoolBridge;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		D23F437F305A27C8004A0B62 /* Build configuration list for PBXProject "iBacalao School Bridge" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D23F43A7305A27C9004A0B62 /* Debug */,
+				D23F43A8305A27C9004A0B62 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D23F43A9305A27C9004A0B62 /* Build configuration list for PBXNativeTarget "iBacalao School Bridge Extension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D23F43AA305A27C9004A0B62 /* Debug */,
+				D23F43AB305A27C9004A0B62 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D23F43AD305A27C9004A0B62 /* Build configuration list for PBXNativeTarget "iBacalao School Bridge" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D23F43AE305A27C9004A0B62 /* Debug */,
+				D23F43AF305A27C9004A0B62 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = D23F437C305A27C8004A0B62 /* Project object */;
+}

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Mac App Store distribution: App Sandbox required (guideline 2.5.2). -->
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<!-- Outbound HTTPS to ibacalao.com (auth, tips API, LLM proxy). -->
+	<key>com.apple.security.network.client</key>
+	<true/>
+	<!-- Keychain group for the ibacalao.com session token (KeyStore.swift).
+	     $(AppIdentifierPrefix) is resolved from the signing team at build
+	     time — never hardcode a team ID here so any developer/CI signing
+	     identity can build this. -->
+	<key>keychain-access-groups</key>
+	<array>
+		<string>$(AppIdentifierPrefix)com.ibacalao.LiveExaminerOverlay</string>
+	</array>
+</dict>
+</plist>

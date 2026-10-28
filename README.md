@@ -26,7 +26,9 @@ The worker never submits work to a school platform. See the [agent protocol](doc
 
 ## This repository
 
-This repository contains the local TypeScript worker and its static UI preview. It includes pairing, health reporting, an MCP server, and an OpenAI-compatible API runner. When a compatible server returns a job, the worker sends its prompt to the configured model and uploads the resulting DOCX draft for review.
+This repository contains the local TypeScript worker, the school watcher and the Mac app that bundles it, and the worker's static UI preview. Read [docs/PRODUCT_TRUTH.md](docs/PRODUCT_TRUTH.md) for what is verified and what is not. The website and server routes live in the separate iBacalao website repository.
+
+The worker part: It includes pairing, health reporting, an MCP server, and an OpenAI-compatible API runner. When a compatible server returns a job, the worker sends its prompt to the configured model and uploads the resulting DOCX draft for review.
 
 ## Quick start
 
@@ -144,6 +146,10 @@ Pairing uses a short-lived code. The browser does not receive the long-lived tok
 | `src/client.ts` | iBacalao API client |
 | `app-preview.html` | Static UI preview; separate from the live worker connection |
 | `docs/PROTOCOL.md` | Pairing, health, and job endpoint contract |
+| `scripts/watcher-daemon.ts`, `lib/watcher/`, `lib/school/` | School watcher that detects assignment changes (Learnbox and ManageBac adapters) |
+| `native/marginalia/` | Mac app (SwiftPM) that runs the bundled watcher |
+| `docs/PRODUCT_TRUTH.md` | Verified facts, hard product rules, and what is not established |
+| `docs/EXTRACTION_MANIFEST.md` | What was moved here from the website repo and what was left out |
 
 ## Privacy and security
 

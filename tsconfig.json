@@ -6,7 +6,20 @@
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true,
-    "types": ["node"]
+    "types": [
+      "node"
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    }
   },
-  "include": ["src", "tests"]
+  "include": [
+    "src",
+    "tests",
+    "lib",
+    "scripts"
+  ]
 }

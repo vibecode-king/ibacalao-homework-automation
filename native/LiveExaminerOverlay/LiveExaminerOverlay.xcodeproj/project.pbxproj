@@ -1,0 +1,288 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 60;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		06D93F93E05CA3C0C810DE51 /* Sources/LiveExaminerOverlayCore/Resources/logo.png in Resources */ = {isa = PBXBuildFile; fileRef = F43D7590DE1E17F64C0087BD /* Sources/LiveExaminerOverlayCore/Resources/logo.png */; };
+		27A70DE6013DA765C0B07AF0 /* AppMain.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEF2D8FCAD915DF30C4BC74C /* AppMain.swift */; };
+		307EDC777C148A2FFD590767 /* Sources/LiveExaminerOverlayCore/Resources/Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D58D38F11C3C1F4F26BC2909 /* Sources/LiveExaminerOverlayCore/Resources/Assets.xcassets */; };
+		3283F656179D9B02DD85E357 /* LiveExaminerOverlayCore in Frameworks */ = {isa = PBXBuildFile; productRef = 343477978E5F4683D48E5F57 /* LiveExaminerOverlayCore */; };
+		6E19AF55199DE12AA8E767EB /* Sources/LiveExaminerOverlayCore/Resources/AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 3C9D615FDAA2CB1C38CE4B91 /* Sources/LiveExaminerOverlayCore/Resources/AppIcon.icns */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		332BD6802A620E032BB2A421 /* LiveExaminerOverlay-MAS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "LiveExaminerOverlay-MAS.entitlements"; sourceTree = "<group>"; };
+		3C9D615FDAA2CB1C38CE4B91 /* Sources/LiveExaminerOverlayCore/Resources/AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = Sources/LiveExaminerOverlayCore/Resources/AppIcon.icns; sourceTree = "<group>"; };
+		496AC9E847EC14BC17F16A4B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B2BB57B99FD6155BF036299B /* LiveExaminerOverlay-DirectDMG.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "LiveExaminerOverlay-DirectDMG.entitlements"; sourceTree = "<group>"; };
+		CC81A0E502B8DC61F41CBFE7 /* iBacalao.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iBacalao.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		CEB58F3917550C34BE3BF437 /* Package.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Package.swift; sourceTree = "<group>"; };
+		D58D38F11C3C1F4F26BC2909 /* Sources/LiveExaminerOverlayCore/Resources/Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Sources/LiveExaminerOverlayCore/Resources/Assets.xcassets; sourceTree = "<group>"; };
+		F43D7590DE1E17F64C0087BD /* Sources/LiveExaminerOverlayCore/Resources/logo.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Sources/LiveExaminerOverlayCore/Resources/logo.png; sourceTree = "<group>"; };
+		FEF2D8FCAD915DF30C4BC74C /* AppMain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppMain.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		47C3BDE754E7DDAF8042059B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3283F656179D9B02DD85E357 /* LiveExaminerOverlayCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		1B6EC3F3AA9807A6157D5CC8 /* Package Resources */ = {
+			isa = PBXGroup;
+			children = (
+				D58D38F11C3C1F4F26BC2909 /* Sources/LiveExaminerOverlayCore/Resources/Assets.xcassets */,
+				3C9D615FDAA2CB1C38CE4B91 /* Sources/LiveExaminerOverlayCore/Resources/AppIcon.icns */,
+				F43D7590DE1E17F64C0087BD /* Sources/LiveExaminerOverlayCore/Resources/logo.png */,
+			);
+			name = "Package Resources";
+			sourceTree = "<group>";
+		};
+		4CAF5343425A220816E6D036 = {
+			isa = PBXGroup;
+			children = (
+				CEB58F3917550C34BE3BF437 /* Package.swift */,
+				9EEB6B433EC749B02FEC9E2A /* App */,
+				1B6EC3F3AA9807A6157D5CC8 /* Package Resources */,
+				9A4F2181097E4E7399498FBE /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		9A4F2181097E4E7399498FBE /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				CC81A0E502B8DC61F41CBFE7 /* iBacalao.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		9EEB6B433EC749B02FEC9E2A /* App */ = {
+			isa = PBXGroup;
+			children = (
+				FEF2D8FCAD915DF30C4BC74C /* AppMain.swift */,
+				496AC9E847EC14BC17F16A4B /* Info.plist */,
+				B2BB57B99FD6155BF036299B /* LiveExaminerOverlay-DirectDMG.entitlements */,
+				332BD6802A620E032BB2A421 /* LiveExaminerOverlay-MAS.entitlements */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		D6E4975457348A6F5F49D730 /* LiveExaminerOverlay */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3492BC970FAB89B9187F4D70 /* Build configuration list for PBXNativeTarget "LiveExaminerOverlay" */;
+			buildPhases = (
+				E0FE966DF97810B9F8DBA981 /* Sources */,
+				47C3BDE754E7DDAF8042059B /* Frameworks */,
+				9CF518654C2B201C1CC5B6E8 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LiveExaminerOverlay;
+			packageProductDependencies = (
+				343477978E5F4683D48E5F57 /* LiveExaminerOverlayCore */,
+			);
+			productName = iBacalao;
+			productReference = CC81A0E502B8DC61F41CBFE7 /* iBacalao.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		DFFE76A83AD1E1463DAE421C /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1560;
+				TargetAttributes = {
+					D6E4975457348A6F5F49D730 = {
+						CreatedOnToolsVersion = 26.0;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = ED70BC21AB29341BC95BE71C /* Build configuration list for PBXProject "LiveExaminerOverlay" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 4CAF5343425A220816E6D036;
+			packageReferences = (
+				B57204C69DADF930BBD3A1F2 /* XCLocalSwiftPackageReference "." */,
+			);
+			productRefGroup = 9A4F2181097E4E7399498FBE /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D6E4975457348A6F5F49D730 /* LiveExaminerOverlay */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		9CF518654C2B201C1CC5B6E8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				307EDC777C148A2FFD590767 /* Sources/LiveExaminerOverlayCore/Resources/Assets.xcassets in Resources */,
+				6E19AF55199DE12AA8E767EB /* Sources/LiveExaminerOverlayCore/Resources/AppIcon.icns in Resources */,
+				06D93F93E05CA3C0C810DE51 /* Sources/LiveExaminerOverlayCore/Resources/logo.png in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		E0FE966DF97810B9F8DBA981 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				27A70DE6013DA765C0B07AF0 /* AppMain.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		042DD2C1F07862BC53012FC9 /* DirectDMG */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "App/LiveExaminerOverlay-DirectDMG.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 13;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.11;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ibacalao.LiveExaminerOverlay;
+				PRODUCT_NAME = iBacalao;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DIRECT_DMG;
+			};
+			name = DirectDMG;
+		};
+		23FF568BA717D96E840DACCE /* MAS */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = MAS;
+		};
+		947B315E8E9847922C1271FB /* DirectDMG */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = DirectDMG;
+		};
+		EA57757741216BAC7DA49054 /* MAS */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "App/LiveExaminerOverlay-MAS.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 13;
+				DEVELOPMENT_TEAM = 3826C72RFN;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.11;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ibacalao.LiveExaminerOverlay;
+				PRODUCT_NAME = iBacalao;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = MAS;
+			};
+			name = MAS;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		3492BC970FAB89B9187F4D70 /* Build configuration list for PBXNativeTarget "LiveExaminerOverlay" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EA57757741216BAC7DA49054 /* MAS */,
+				042DD2C1F07862BC53012FC9 /* DirectDMG */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = DirectDMG;
+		};
+		ED70BC21AB29341BC95BE71C /* Build configuration list for PBXProject "LiveExaminerOverlay" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				23FF568BA717D96E840DACCE /* MAS */,
+				947B315E8E9847922C1271FB /* DirectDMG */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = DirectDMG;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		B57204C69DADF930BBD3A1F2 /* XCLocalSwiftPackageReference "." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = .;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		343477978E5F4683D48E5F57 /* LiveExaminerOverlayCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B57204C69DADF930BBD3A1F2 /* XCLocalSwiftPackageReference "." */;
+			productName = LiveExaminerOverlayCore;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = DFFE76A83AD1E1463DAE421C /* Project object */;
+}
