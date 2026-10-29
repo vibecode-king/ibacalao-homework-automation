@@ -4,6 +4,11 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { join } from "node:path";
+import { mkdtempSync as __mkdtemp } from "node:fs";
+import { tmpdir as __tmpdir } from "node:os";
+import { join as __join } from "node:path";
+// Keep spawned agents from writing counters into the real home directory.
+process.env.IBACALAO_STATE_DIR = __mkdtemp(__join(__tmpdir(), "ib-ping-state-"));
 
 function readBody(req: IncomingMessage): Promise<Buffer> {
   return new Promise((resolve, reject) => {

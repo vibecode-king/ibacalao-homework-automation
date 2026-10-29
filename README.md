@@ -98,6 +98,10 @@ Add your model settings to the `.env` created by pairing. Set `IBACALAO_LLM_API_
 | `IBACALAO_LLM_API_KEY` | Your key for the configured model endpoint. |
 | `IBACALAO_LLM_MODEL` | Model name sent to the endpoint. |
 | `IBACALAO_LLM_MAX_TOKENS` | Output cap per draft; defaults to 8,000 and accepts values from 1 to 32,000. |
+| `IBACALAO_MAX_JOBS_PER_DAY` | Local daily cap on drafts this machine starts; defaults to 20. The agent stops claiming until the next local day. |
+| `IBACALAO_MAX_TOKENS_PER_DAY` | Local daily model-token cap on your own key; defaults to 400,000. |
+| `IBACALAO_MAX_ATTEMPTS_PER_JOB` | Model attempts allowed for one assignment per day; defaults to 2. |
+| `IBACALAO_STATE_DIR` | Where the install id and daily counters are kept; defaults to `~/.ibacalao-homework`. |
 
 The scripts read environment variables from the process; they do not load `.env` automatically. In macOS/Linux bash or zsh, load it and check the connection:
 

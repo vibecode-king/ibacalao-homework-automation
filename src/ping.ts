@@ -4,6 +4,7 @@ import { runConfiguredAssignmentAgent } from "./agentRunner";
 import { AgentApiError, createAgentApiClient } from "./client";
 import { buildDocxFromText } from "./docx";
 import { resolveAgentId } from "./agentId";
+import { Backoff, DailyBudget, limitsFromEnv } from "./budget";
 import { normalizeAgentServiceBaseUrl } from "./network";
 
 type ClaimedJob = {
@@ -21,12 +22,25 @@ const pollMs = Math.max(5_000, Math.min(300_000, Number(process.env.IBACALAO_AGE
 const agentId = resolveAgentId("worker");
 
 const { request, submitCompletion } = createAgentApiClient(baseUrl, token);
+const budget = new DailyBudget(limitsFromEnv());
+const backoff = new Backoff(pollMs);
+let capMessageShown = false;
 let waitingMessageShown = false;
 let pausedMessageShown = false;
 let activeJobId: string | null = null;
 let activeClaimToken: string | null = null;
 
 async function processOne(): Promise<boolean> {
+  // Check caps before claiming so a capped agent never holds a lease or calls a model.
+  const blocked = budget.blockedReason();
+  if (blocked) {
+    if (!capMessageShown) {
+      console.log(`[homework-agent] Paused until tomorrow: ${blocked}. No assignment was claimed.`);
+      capMessageShown = true;
+    }
+    return false;
+  }
+  capMessageShown = false;
   const result = await request<{ job: ClaimedJob | null; paused?: boolean; reason?: string }>("/api/agent/jobs/claim", { agentId, pollIntervalMs: pollMs });
   if (result.paused) {
     if (!pausedMessageShown) {
@@ -54,9 +68,18 @@ async function processOne(): Promise<boolean> {
   activeClaimToken = job.claimToken;
   console.log(`[homework-agent] Claimed job ${job.id}; generating draft.`);
   try {
+    if (!budget.beginAttempt(job.id)) {
+      // The same job keeps coming back; stop spending on it and hand it back.
+      await request(`/api/agent/jobs/${encodeURIComponent(job.id)}/fail`, {
+        claimToken: job.claimToken,
+        error: "Agent attempt limit reached for this assignment on this machine.",
+      }).catch(() => undefined);
+      throw new Error(`Skipped job ${job.id}: local attempt limit reached.`);
+    }
     let output: Awaited<ReturnType<typeof runConfiguredAssignmentAgent>>;
     try {
       output = await runConfiguredAssignmentAgent(job.prompt, job.modelName);
+      budget.recordTokens(output.tokensUsed ?? 0);
     } catch (error) {
       const message = error instanceof Error ? error.message.slice(0, 400) : "Agent failed.";
       let releaseConfirmed = false;
@@ -173,12 +196,14 @@ async function main(): Promise<void> {
     do {
       try {
         const found = await processOne();
+        backoff.success();
         if (once) return;
         if (!found) await sleep(pollMs);
       } catch (error) {
         if (once) throw error;
-        console.error(`[homework-agent] ${error instanceof Error ? error.message : "Agent cycle failed."}`);
-        await sleep(pollMs);
+        const waitMs = backoff.failure();
+        console.error(`[homework-agent] ${error instanceof Error ? error.message : "Agent cycle failed."} Retrying in ${Math.ceil(waitMs / 1_000)} seconds.`);
+        await sleep(waitMs);
       }
     } while (!once);
   } finally {

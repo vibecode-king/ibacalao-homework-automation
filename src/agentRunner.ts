@@ -6,6 +6,8 @@ export type AssignmentAgentResult = {
   engine: string;
   model: string;
   qaResult?: unknown;
+  /** Tokens the endpoint reported (or the per-job cap when it reported none). */
+  tokensUsed?: number;
 };
 
 const DEFAULT_TIMEOUT_MS = 12 * 60 * 1000;
@@ -97,7 +99,9 @@ async function runOpenAiCompatible(prompt: string, preferredModel?: string): Pro
     catch { throw new Error("The configured model endpoint returned invalid JSON."); }
     const content = payload.choices?.[0]?.message?.content;
     if (typeof content !== "string") throw new Error("The configured model endpoint returned no text result.");
-    return parseAssignmentAgentResult(content, { engine: "openai-compatible", model: payload.model ?? model });
+    const parsedResult = parseAssignmentAgentResult(content, { engine: "openai-compatible", model: payload.model ?? model });
+    const reported = Number((payload as { usage?: { total_tokens?: unknown } }).usage?.total_tokens);
+    return { ...parsedResult, tokensUsed: Number.isFinite(reported) && reported > 0 ? reported : requestBody.max_tokens };
   } catch (error) {
     if (controller.signal.aborted) throw new Error("The configured model request timed out.");
     throw error;

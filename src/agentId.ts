@@ -9,7 +9,7 @@ const ID_PATTERN = /^[a-f0-9]{16,64}$/;
  * Stable random id for this install. The hostname often contains the student's
  * name, so it is never sent to the server.
  */
-export function resolveAgentId(kind: "worker" | "mcp", env: NodeJS.ProcessEnv = process.env, dir = join(homedir(), ".ibacalao-homework")): string {
+export function resolveAgentId(kind: "worker" | "mcp", env: NodeJS.ProcessEnv = process.env, dir = env.IBACALAO_STATE_DIR?.trim() || join(homedir(), ".ibacalao-homework")): string {
   const configured = env.IBACALAO_AGENT_ID?.trim();
   if (configured) return configured.slice(0, 120);
   const file = join(dir, "agent-id");
