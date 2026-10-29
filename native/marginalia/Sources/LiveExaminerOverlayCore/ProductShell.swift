@@ -24,11 +24,29 @@ enum NativeRoutes {
     // not yet live on ibacalao.com, but its subpaths (/teachers/calibration,
     // /demo, etc.) are real product tools that must stay reachable in-app.
     static let blockedExactPaths = ["/teachers"]
-    // Chat is the desktop product home. Today context, plugins and school
-    // context now surface inside this workspace instead of competing with it.
-    static let landingPath = "/chat"
+    // Production keeps Chat as the desktop home. A trusted Vercel preview uses
+    // the existing Homework sign-in route and returns there after authentication.
+    static let chatLandingPath = "/chat"
+    static let homeworkLandingPath = "/homework"
+    static let homeworkSignInPath = "/login?redirect=%2Fhomework"
+    static var landingPath: String {
+        landingPath(for: LLMClient.resolvedNativeAPIBaseURL)
+    }
     static let entryPath = "/desktop-entry"
     static let onboardingPath = "/onboarding"
+
+    static func landingPath(for baseURL: String) -> String {
+        let host = URL(string: baseURL)?.host?.lowercased() ?? ""
+        return NativeHostPolicy.isTrustedPreviewHost(host) ? homeworkLandingPath : chatLandingPath
+    }
+
+    static var initialLaunchPath: String {
+        initialLaunchPath(for: LLMClient.resolvedNativeAPIBaseURL)
+    }
+
+    static func initialLaunchPath(for baseURL: String) -> String {
+        landingPath(for: baseURL) == homeworkLandingPath ? homeworkSignInPath : entryPath
+    }
 
     // Hosts an OAuth consent screen genuinely has to visit mid-flow (see
     // lib/oauth.ts googleAuthUrl/microsoftAuthUrl). Token exchange itself
@@ -1145,7 +1163,7 @@ struct ShellView: View {
                 }
                 #endif
             }
-            controller.load(path: NativeRoutes.entryPath)
+            controller.load(path: NativeRoutes.initialLaunchPath)
         }
         .background(Brand.ground)
     }

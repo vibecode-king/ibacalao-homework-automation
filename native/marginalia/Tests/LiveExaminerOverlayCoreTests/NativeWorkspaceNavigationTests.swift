@@ -3,8 +3,13 @@ import XCTest
 
 @MainActor
 final class NativeWorkspaceNavigationTests: XCTestCase {
-    func testProductShellLandsOnChat() {
-        XCTAssertEqual(NativeRoutes.landingPath, "/chat")
+    func testProductShellUsesHomeworkForTrustedPreviewAndChatInProduction() {
+        let preview = "https://ibacalao-git-staging-vanos-projects-91d1222a.vercel.app"
+        XCTAssertEqual(NativeRoutes.landingPath(for: preview), "/homework")
+        XCTAssertEqual(NativeRoutes.initialLaunchPath(for: preview), "/login?redirect=%2Fhomework")
+        XCTAssertEqual(NativeRoutes.landingPath(for: "https://app.ibacalao.com"), "/chat")
+        XCTAssertEqual(NativeRoutes.initialLaunchPath(for: "https://app.ibacalao.com"), "/desktop-entry")
+        XCTAssertEqual(NativeRoutes.landingPath(for: "https://untrusted.vercel.app"), "/chat")
     }
 
     func testProfileAndSettingsProductRoutesStayNative() {
