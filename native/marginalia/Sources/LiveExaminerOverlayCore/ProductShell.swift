@@ -618,6 +618,7 @@ final class ShellWebCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, O
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         isLoading = false
         isOffline = false
+        dlog("[Shell] didFinish url=\(webView.url?.absoluteString ?? "nil")")
         // #region agent log
         agentLog("H6", location: "ProductShell.swift:didFinish", message: "shell loaded", data: [
             "path": webView.url?.path ?? "",
@@ -756,6 +757,57 @@ final class ShellController: ObservableObject {
         dlog("[Shell] synced ib_session from \(cookie.domain)")
     }
 
+    /// Asks the site whether a saved session token still belongs to a user.
+    func savedSessionIsValid(_ token: String) async -> Bool {
+        guard let url = URL(string: "/api/auth/me", relativeTo: Self.base) else { return false }
+        var request = URLRequest(url: url, timeoutInterval: 8)
+        request.setValue("ib_session=\(token)", forHTTPHeaderField: "Cookie")
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+            let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+            let valid = json?["user"] != nil && !(json?["user"] is NSNull)
+            dlog("[Shell] saved session check status=\(status) valid=\(valid) host=\(url.host ?? "")")
+            return valid
+        } catch {
+            dlog("[Shell] saved session check failed: \(error.localizedDescription)")
+            return false
+        }
+    }
+
+    /// Puts the session token into the webview as `ib_session`. On production
+    /// the cookie must cover every ibacalao.com host: the site redirects between
+    /// www. and app., and a host-only cookie on www. is dropped on that hop, so
+    /// the page loads signed out right after a successful sign-in.
+    func installSessionCookie(_ token: String) async {
+        let host = Self.base.host?.lowercased() ?? ""
+        var properties: [HTTPCookiePropertyKey: Any] = [
+            .name: "ib_session",
+            .value: token,
+            .path: "/",
+            .secure: "TRUE",
+            .expires: Date().addingTimeInterval(60 * 60 * 24 * 30),
+        ]
+        if host == "ibacalao.com" || host.hasSuffix(".ibacalao.com") {
+            properties[.domain] = ".ibacalao.com"
+        } else {
+            properties[.originURL] = Self.base
+        }
+        guard let cookie = HTTPCookie(properties: properties) else { return }
+        // A stale ib_session left in the jar (host-only or .ibacalao.com) would
+        // be picked up by syncWebsiteSessionIntoKeyStore and overwrite the fresh
+        // token right after sign-in, so remove every older one first.
+        await clearSessionCookies()
+        await webView.configuration.websiteDataStore.httpCookieStore.setCookie(cookie)
+    }
+
+    func clearSessionCookies() async {
+        let store = webView.configuration.websiteDataStore.httpCookieStore
+        for cookie in await store.allCookies() where cookie.name == "ib_session" {
+            await store.deleteCookie(cookie)
+        }
+    }
+
     /// Installs a session token obtained outside the webview (native OAuth via
     /// ASWebAuthenticationSession) into both the webview cookie jar and the
     /// KeyStore, then loads the signed-in surface. Mirrors what a normal web
@@ -763,14 +815,7 @@ final class ShellController: ObservableObject {
     func adoptSession(token: String, needsSetup: Bool, onboarding: Bool = false) async {
         try? KeyStore.saveSessionToken(token)
         SchoolWatcherService.shared.restartWithCurrentSession()
-        if let cookie = HTTPCookie(properties: [
-            .name: "ib_session",
-            .value: token,
-            .path: "/",
-            .originURL: Self.base,
-        ]) {
-            await webView.configuration.websiteDataStore.httpCookieStore.setCookie(cookie)
-        }
+        await installSessionCookie(token)
         dlog("[Shell] adopted native OAuth session (needsSetup: \(needsSetup), onboarding: \(onboarding))")
         // `/` is deliberately blocked inside app mode because it is the public
         // marketing homepage. New OAuth users therefore need an allowed native
@@ -1176,7 +1221,21 @@ struct ShellView: View {
                 }
                 #endif
             }
-            controller.load(path: NativeRoutes.initialLaunchPath)
+            Task { @MainActor in
+                // A still-valid saved session goes straight to Homework. Anything
+                // else starts at the existing sign-in screen.
+                if let saved = KeyStore.loadSessionToken(), !saved.isEmpty,
+                   await controller.savedSessionIsValid(saved) {
+                    await controller.installSessionCookie(saved)
+                    controller.load(path: NativeRoutes.landingPath)
+                } else {
+                    // Nothing valid is saved: drop any stale token or cookie so it
+                    // cannot shadow the next sign-in.
+                    KeyStore.deleteSession()
+                    await controller.clearSessionCookies()
+                    controller.load(path: NativeRoutes.initialLaunchPath)
+                }
+            }
         }
         .background(Brand.ground)
     }
