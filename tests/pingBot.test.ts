@@ -125,9 +125,9 @@ test("Ping Bot builds a DOCX, uploads multipart data, and retries the identical 
     assert.equal(completion.document.readUInt32LE(0), 0x04034b50);
     assert.match(completion.document.toString("utf8"), /word\/document\.xml/);
     assert.match(completion.document.toString("utf8"), /Review draft/);
-    assert.equal(completion.metadata.engine, "test-endpoint");
+    assert.equal(completion.metadata.engine, "openai-compatible");
     assert.equal(completion.metadata.model, "local-test-model");
-    assert.deepEqual(completion.metadata.qaResult, { status: "self_checked", checks: [] });
+    assert.deepEqual(completion.metadata.qaResult, { selfReported: true, result: { status: "self_checked", checks: [] } });
     assert.match(stdout, /Saved job job-e2e-1 as ready_for_review/);
   } finally {
     server.close();

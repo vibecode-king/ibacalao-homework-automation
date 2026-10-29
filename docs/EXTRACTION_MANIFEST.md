@@ -8,7 +8,7 @@ Date: 2026-10-28. Source: `vibecode-king/ibacalao` branch `staging` at `9bef05c7
 |---|---|
 | Mac app | `native/marginalia/`, `native/LiveExaminerOverlay/`, `native/safari-school-bridge/`, `release-version.json` |
 | Watcher daemon and its full dependency closure (53 files, computed with an esbuild metafile) | `scripts/watcher-daemon.ts`, `lib/watcher/**`, `lib/school/**`, `lib/security/**` |
-| Type-only dependencies the closure needs for `tsc` | `lib/school/types.ts`, `lib/school/uivisionTypes.ts`, `lib/school/freshness.ts`, `lib/dispatch.ts`, `lib/redis.ts` |
+| Type-only dependencies the closure needs for `tsc` | `lib/school/types.ts`, `lib/school/uivisionTypes.ts`, `lib/school/freshness.ts` (`DispatchRecordKind` is now a local type; `lib/dispatch.ts`, `lib/redis.ts` and `@upstash/redis` were removed) |
 | Extra modules whose tests are self-contained | `lib/watcher/mutation.ts`, `lib/school/messageUrgency.ts` |
 | Tests that run without the website | `lib/watcher/__tests__/`, `lib/school/__tests__/` |
 | Build and release scripts | `scripts/package-watcher-runtime.sh`, `scripts/build-scrapling-helper.sh`, `scripts/watcher-runtime-manifest.mjs`, `scripts/check-release-version.cjs`, `tools/scrapling-repair/` |
@@ -42,4 +42,3 @@ Date: 2026-10-28. Source: `vibecode-king/ibacalao` branch `staging` at `9bef05c7
 - `build_app.sh` full run, signing, notarization and DMG packaging from this repo (it installs to `/Applications`, so it was not run).
 - Scrapling helper build and watcher runtime packaging (needs network and Python).
 - Anything against a live server, school or model.
-- `lib/dispatch.ts` and `lib/redis.ts` are copied for types only and pull `@upstash/redis`; trimming them to a type-only module is a follow-up.

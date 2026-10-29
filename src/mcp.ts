@@ -1,9 +1,10 @@
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { hostname } from "node:os";
+import "./loadEnv";
 import { createAgentApiClient } from "./client";
 import { buildDocxFromText } from "./docx";
+import { resolveAgentId } from "./agentId";
 import { normalizeAgentServiceBaseUrl } from "./network";
 import { wrapUntrustedAssignment } from "./prompt";
 
@@ -13,11 +14,12 @@ import { wrapUntrustedAssignment } from "./prompt";
 
 const baseUrl = normalizeAgentServiceBaseUrl(process.env.IBACALAO_BASE_URL || "https://app.ibacalao.com");
 const token = process.env.IBACALAO_AGENT_TOKEN?.trim();
-const agentId = (process.env.IBACALAO_AGENT_ID || `${hostname()}-mcp-${process.pid}`).slice(0, 120);
+const agentId = resolveAgentId("mcp");
 const { request, submitCompletion } = createAgentApiClient(baseUrl, token);
 
 type ClaimedJob = { id: string; title: string; claimToken: string; prompt: string; leaseMinutes?: number; modelName?: string };
 let activeJobId: string | null = null;
+let activeClaimToken: string | null = null;
 const reportHealth = (status: "polling" | "idle" | "working" | "error", jobId?: string) => request("/api/agent/health", {
   agentId,
   status,
@@ -43,18 +45,19 @@ server.registerTool(
     try {
       const result = await request<{ job: ClaimedJob | null; paused?: boolean; reason?: string }>("/api/agent/jobs/claim", { agentId, pollIntervalMs: 30_000 });
       if (result.paused) {
-        activeJobId = null;
+        activeJobId = null; activeClaimToken = null;
         await reportHealth("idle");
         const reason = typeof result.reason === "string" ? ` (${result.reason})` : "";
         return text(`Homework drafting is paused on this server${reason}. No assignment was claimed or sent to an AI provider.`);
       }
       const { job } = result;
       if (!job) {
-        activeJobId = null;
+        activeJobId = null; activeClaimToken = null;
         await reportHealth("idle");
         return text("No homework jobs are waiting.");
       }
       activeJobId = job.id;
+      activeClaimToken = job.claimToken;
       await reportHealth("working", activeJobId);
       return text([
         `jobId: ${job.id}`,
@@ -68,7 +71,7 @@ server.registerTool(
         "When done, call submit_homework_draft with artifactText containing the complete draft as plain text or Markdown (never HTML). If you cannot finish, call fail_homework_job.",
       ].join("\n"));
     } catch (error) {
-      activeJobId = null;
+      activeJobId = null; activeClaimToken = null;
       await reportHealth("error");
       return failure(error);
     }
@@ -94,11 +97,11 @@ server.registerTool(
         document,
         { claimToken, engine: "mcp-client", model: model ?? "mcp-client" },
       );
-      activeJobId = null;
+      activeJobId = null; activeClaimToken = null;
       await reportHealth("idle");
       return text(`Saved ${saved.job.id} as ${saved.job.state}. The school platform was not changed.`);
     } catch (error) {
-      activeJobId = null;
+      activeJobId = null; activeClaimToken = null;
       await reportHealth("error");
       return failure(error);
     }
@@ -118,11 +121,11 @@ server.registerTool(
   async ({ jobId, claimToken, reason }) => {
     try {
       await request(`/api/agent/jobs/${encodeURIComponent(jobId)}/fail`, { claimToken, error: reason });
-      activeJobId = null;
+      activeJobId = null; activeClaimToken = null;
       await reportHealth("idle");
       return text("Job released.");
     } catch (error) {
-      activeJobId = null;
+      activeJobId = null; activeClaimToken = null;
       await reportHealth("error");
       return failure(error);
     }
@@ -135,8 +138,21 @@ async function main(): Promise<void> {
   void reportHealth("polling");
   const heartbeat = setInterval(() => { void reportHealth(activeJobId ? "working" : "polling", activeJobId ?? undefined); }, 30_000);
   const stopHeartbeat = () => clearInterval(heartbeat);
-  process.once("SIGINT", stopHeartbeat);
-  process.once("SIGTERM", stopHeartbeat);
+  const releaseAndExit = (signal: string) => {
+    stopHeartbeat();
+    void (async () => {
+      if (activeJobId && activeClaimToken) {
+        await request(`/api/agent/jobs/${encodeURIComponent(activeJobId)}/fail`, {
+          claimToken: activeClaimToken,
+          error: `MCP host stopped (${signal}) before the draft was submitted.`,
+        }).catch(() => undefined);
+      }
+      await reportHealth("idle");
+      process.exit(0);
+    })();
+  };
+  process.once("SIGINT", () => releaseAndExit("SIGINT"));
+  process.once("SIGTERM", () => releaseAndExit("SIGTERM"));
   process.stdin.once("end", stopHeartbeat);
 }
 

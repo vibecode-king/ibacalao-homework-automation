@@ -1,4 +1,5 @@
-import type { DispatchRecordKind } from "@/lib/dispatch";
+/** Record kinds the watcher can report. Mirrors the server-side Dispatch kinds. */
+export type DispatchRecordKind = "assignment" | "message" | "grade" | "submission" | "deadline";
 import type { SchoolSourceKey } from "./source";
 
 export type SchoolSyncMode =

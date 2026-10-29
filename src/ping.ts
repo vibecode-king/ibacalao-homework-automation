@@ -1,8 +1,9 @@
-import { hostname } from "node:os";
+import "./loadEnv";
 import { setTimeout as sleep } from "node:timers/promises";
 import { runConfiguredAssignmentAgent } from "./agentRunner";
 import { AgentApiError, createAgentApiClient } from "./client";
 import { buildDocxFromText } from "./docx";
+import { resolveAgentId } from "./agentId";
 import { normalizeAgentServiceBaseUrl } from "./network";
 
 type ClaimedJob = {
@@ -17,12 +18,13 @@ const baseUrl = normalizeAgentServiceBaseUrl(process.env.IBACALAO_BASE_URL || "h
 const token = process.env.IBACALAO_AGENT_TOKEN?.trim();
 const once = process.argv.includes("--once");
 const pollMs = Math.max(5_000, Math.min(300_000, Number(process.env.IBACALAO_AGENT_POLL_MS) || 15_000));
-const agentId = (process.env.IBACALAO_AGENT_ID || `${hostname()}-${process.pid}`).slice(0, 120);
+const agentId = resolveAgentId("worker");
 
 const { request, submitCompletion } = createAgentApiClient(baseUrl, token);
 let waitingMessageShown = false;
 let pausedMessageShown = false;
 let activeJobId: string | null = null;
+let activeClaimToken: string | null = null;
 
 async function processOne(): Promise<boolean> {
   const result = await request<{ job: ClaimedJob | null; paused?: boolean; reason?: string }>("/api/agent/jobs/claim", { agentId, pollIntervalMs: pollMs });
@@ -49,6 +51,7 @@ async function processOne(): Promise<boolean> {
 
   waitingMessageShown = false;
   activeJobId = job.id;
+  activeClaimToken = job.claimToken;
   console.log(`[homework-agent] Claimed job ${job.id}; generating draft.`);
   try {
     let output: Awaited<ReturnType<typeof runConfiguredAssignmentAgent>>;
@@ -119,10 +122,12 @@ async function processOne(): Promise<boolean> {
     }
     console.log(`[homework-agent] Draft saved for review. Saved job ${saved.job.id} as ${saved.job.state}. The school platform was not changed.`);
     activeJobId = null;
+    activeClaimToken = null;
     await request("/api/agent/health", { agentId, status: "idle", pollIntervalMs: pollMs }).catch(() => undefined);
     return true;
   } catch (error) {
     activeJobId = null;
+    activeClaimToken = null;
     await request("/api/agent/health", { agentId, status: "error", pollIntervalMs: pollMs }).catch(() => undefined);
     throw error;
   }
@@ -145,6 +150,25 @@ async function main(): Promise<void> {
   }).catch(() => undefined);
   await reportHealth();
   const heartbeat = setInterval(() => { void reportHealth(); }, 30_000);
+  let stopping = false;
+  const releaseAndExit = (signal: string) => {
+    if (stopping) return;
+    stopping = true;
+    clearInterval(heartbeat);
+    void (async () => {
+      // Hand an unfinished job back now instead of leaving it leased until expiry.
+      if (activeJobId && activeClaimToken) {
+        await request(`/api/agent/jobs/${encodeURIComponent(activeJobId)}/fail`, {
+          claimToken: activeClaimToken,
+          error: `Agent stopped (${signal}) before finishing.`,
+        }).catch(() => undefined);
+      }
+      await request("/api/agent/health", { agentId, status: "idle", pollIntervalMs: pollMs }).catch(() => undefined);
+      process.exit(0);
+    })();
+  };
+  process.once("SIGINT", () => releaseAndExit("SIGINT"));
+  process.once("SIGTERM", () => releaseAndExit("SIGTERM"));
   try {
     do {
       try {

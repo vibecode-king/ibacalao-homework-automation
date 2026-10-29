@@ -124,23 +124,30 @@ enum AccessibilityTextExtractor {
 
     // MARK: - Tree walk
 
+    /// Checks the Core Foundation type before bridging so a surprising attribute
+    /// value returns nil instead of crashing the app.
+    private static func axElement(_ ref: CFTypeRef) -> AXUIElement? {
+        guard CFGetTypeID(ref) == AXUIElementGetTypeID() else { return nil }
+        return unsafeBitCast(ref, to: AXUIElement.self)
+    }
+
     private static func focusedElement(in app: AXUIElement) -> AXUIElement? {
         var value: CFTypeRef?
         guard AXUIElementCopyAttributeValue(app, kAXFocusedUIElementAttribute as CFString, &value) == .success,
               let ref = value else { return nil }
-        return (ref as! AXUIElement)
+        return axElement(ref)
     }
 
     private static func mainOrFocusedWindow(of app: AXUIElement) -> AXUIElement? {
         var focusedWindow: CFTypeRef?
         if AXUIElementCopyAttributeValue(app, kAXFocusedWindowAttribute as CFString, &focusedWindow) == .success,
            let ref = focusedWindow {
-            return (ref as! AXUIElement)
+            return axElement(ref)
         }
         var mainWindow: CFTypeRef?
         if AXUIElementCopyAttributeValue(app, kAXMainWindowAttribute as CFString, &mainWindow) == .success,
            let ref = mainWindow {
-            return (ref as! AXUIElement)
+            return axElement(ref)
         }
         var windows: CFTypeRef?
         if AXUIElementCopyAttributeValue(app, kAXWindowsAttribute as CFString, &windows) == .success,

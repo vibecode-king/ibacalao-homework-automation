@@ -20,7 +20,7 @@ This repo holds the homework worker (`src/`), the school watcher (`scripts/watch
 
 ```sh
 npm ci
-npm run check          # typecheck + all 306 tests (worker, watcher, school)
+npm run check          # typecheck + all 317 tests (worker, watcher, school)
 npm run watcher:bundle # standalone esbuild bundle of the watcher daemon into dist/
 npm run release:check  # native bundles agree with release-version.json
 cd native/marginalia && swift build -c debug   # compile the Mac app

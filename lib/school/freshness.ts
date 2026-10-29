@@ -1,11 +1,10 @@
 // lib/school/freshness.ts
-// Server-side proof of life per school source.
+// Per-source proof-of-life state, as computed by the server from heartbeats.
+// Only the pure summarizer and types live here; storage stays in the website repo.
 //
 // The watcher only uploads when something changed, so without a heartbeat the
 // server cannot tell "nothing new at school" from "the Mac has been asleep for
 // three days". Silence must never read as all-clear.
-
-import { redis } from "@/lib/redis";
 
 /** Healthy polling is ~30 min with jitter; two missed cycles plus slack. */
 export const STALE_AFTER_MS = 2 * 60 * 60 * 1000;
@@ -26,9 +25,7 @@ export type SourceFreshness = {
   state: SourceFreshnessState;
 };
 
-const freshnessKey = (userId: string) => `school:${userId}:freshness`;
-// Separate hash fields per fact so concurrent heartbeat/ingest writes never
-// read-modify-write each other.
+// Hash fields are "<sourceKey>|<fact>" so concurrent writes never read-modify-write.
 const field = (sourceKey: string, fact: "hb" | "ok" | "ingest") => `${sourceKey}|${fact}`;
 
 function isoOrNull(value: unknown): string | null {
@@ -57,32 +54,4 @@ export function summarizeFreshness(fields: Record<string, unknown> | null, now: 
     else if (lastSuccessAt !== null && now - successAt > STALE_AFTER_MS) state = "failing";
     return { sourceKey, lastHeartbeatAt, lastSuccessAt, lastIngestAt, state };
   }).sort((a, b) => a.sourceKey.localeCompare(b.sourceKey));
-}
-
-export async function recordHeartbeat(userId: string, sourceKey: string, lastSuccessAt?: string | null): Promise<void> {
-  const now = new Date().toISOString();
-  const success = isoOrNull(lastSuccessAt);
-  // A future-dated success from a skewed client clock would mask failures.
-  const trusted = success && Date.parse(success) <= Date.now() + 60_000 ? success : null;
-  await redis().hset(freshnessKey(userId), {
-    [field(sourceKey, "hb")]: now,
-    ...(trusted ? { [field(sourceKey, "ok")]: trusted } : {}),
-  });
-}
-
-/** An accepted upload is both proof of life and proof of a successful crawl. */
-export async function recordIngest(userId: string, sourceKey: string): Promise<void> {
-  const now = new Date().toISOString();
-  await redis().hset(freshnessKey(userId), {
-    [field(sourceKey, "hb")]: now,
-    [field(sourceKey, "ingest")]: now,
-  });
-}
-
-export async function getSchoolFreshness(userId: string): Promise<SourceFreshness[]> {
-  return summarizeFreshness(await redis().hgetall<Record<string, unknown>>(freshnessKey(userId)));
-}
-
-export async function deleteSchoolFreshness(userId: string): Promise<void> {
-  await redis().del(freshnessKey(userId));
 }

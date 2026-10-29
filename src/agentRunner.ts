@@ -1,3 +1,4 @@
+import { looksLikeHtmlDocument } from "./docx";
 import { normalizeAgentServiceBaseUrl } from "./network";
 
 export type AssignmentAgentResult = {
@@ -26,15 +27,19 @@ export function parseAssignmentAgentResult(raw: string, defaults: { engine: stri
   if (typeof value.artifactText !== "string" || !value.artifactText.trim()) {
     throw new Error("The configured agent result must include non-empty artifactText.");
   }
-  if (/<\/?(?:html|body|div|p|h[1-6]|ul|ol|li|table|tr|td|th|section|article)\b[^>]*>/i.test(value.artifactText)) {
+  if (looksLikeHtmlDocument(value.artifactText)) {
     throw new Error("The configured agent must return plain text or Markdown, not HTML.");
   }
   if (Buffer.byteLength(value.artifactText, "utf8") > 500_000) throw new Error("The generated document exceeds the 500 KB limit.");
+  // Engine and model come from the worker's own config, never from model output.
+  // A model-written qaResult is kept only as an unverified self-check.
   return {
     artifactText: value.artifactText,
-    engine: typeof value.engine === "string" ? value.engine.slice(0, 120) : defaults.engine,
-    model: typeof value.model === "string" ? value.model.slice(0, 160) : defaults.model,
-    ...(value.qaResult && typeof value.qaResult === "object" ? { qaResult: value.qaResult } : {}),
+    engine: defaults.engine,
+    model: defaults.model,
+    ...(value.qaResult && typeof value.qaResult === "object" && !Array.isArray(value.qaResult)
+      ? { qaResult: { selfReported: true, result: value.qaResult } }
+      : {}),
   };
 }
 
@@ -45,7 +50,8 @@ async function runOpenAiCompatible(prompt: string, preferredModel?: string): Pro
   }
   const baseUrl = normalizeAgentServiceBaseUrl(configuredBaseUrl);
   const requestedModel = typeof preferredModel === "string" ? preferredModel.trim() : "";
-  const model = (requestedModel || process.env.IBACALAO_LLM_MODEL || "gpt-4o-mini").trim();
+  const model = (requestedModel || process.env.IBACALAO_LLM_MODEL || "").trim();
+  if (!model) throw new Error("Set IBACALAO_LLM_MODEL to the model name your endpoint serves.");
   if (model.length > 160 || /[\u0000-\u001f\u007f]/.test(model)) {
     throw new Error("The configured model name is invalid.");
   }

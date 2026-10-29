@@ -14,6 +14,13 @@ function crc32(bytes: Buffer): number {
   return (value ^ 0xffffffff) >>> 0;
 }
 
+const STYLES_XML = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+  + '<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Calibri"/><w:sz w:val="22"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="160" w:line="276" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>'
+  + '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>'
+  + [[1, 32], [2, 28], [3, 24]].map(([level, size]) => '<w:style w:type="paragraph" w:styleId="Heading' + level + '"><w:name w:val="heading ' + level + '"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="240" w:after="120"/><w:outlineLvl w:val="' + (Number(level) - 1) + '"/></w:pPr><w:rPr><w:b/><w:sz w:val="' + size + '"/></w:rPr></w:style>').join("")
+  + '<w:style w:type="paragraph" w:styleId="ListParagraph"><w:name w:val="List Paragraph"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:ind w:left="720"/></w:pPr></w:style>'
+  + '</w:styles>';
+
 function xmlSafe(value: string): string {
   return value
     .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\ufffe\uffff]/g, "")
@@ -91,9 +98,19 @@ function zip(entries: Array<{ name: string; content: string }>): Buffer {
   return Buffer.concat([...local, centralBytes, end]);
 }
 
+/**
+ * True when the whole draft is an HTML page rather than text. Tags quoted inside
+ * a normal draft (a web design essay, code samples) are escaped into the DOCX
+ * and are fine.
+ */
+export function looksLikeHtmlDocument(text: string): boolean {
+  const head = text.trimStart().slice(0, 400);
+  return /^<!doctype\s+html/i.test(head) || /^<(?:html|body)\b/i.test(head) || /^<(?:div|p|h[1-6]|ul|ol|table|section|article)\b[^>]*>[\s\S]*<\/(?:div|p|h[1-6]|ul|ol|table|section|article)>\s*$/i.test(text.trim());
+}
+
 export function buildDocxFromText(text: string): Buffer {
   if (!text.trim()) throw new Error("The generated document is empty.");
-  if (/<\/?(?:html|body|div|p|h[1-6]|ul|ol|li|table|tr|td|th|section|article)\b[^>]*>/i.test(text)) {
+  if (looksLikeHtmlDocument(text)) {
     throw new Error("HTML output is not accepted. Return plain text or Markdown.");
   }
   if (Buffer.byteLength(text, "utf8") > MAX_TEXT_BYTES) throw new Error("The generated document exceeds the 500 KB limit.");
@@ -102,8 +119,10 @@ export function buildDocxFromText(text: string): Buffer {
   const body = lines.map((line) => line ? paragraph(line) : "<w:p/>").join("");
   const document = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><w:document xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><w:body>" + body + "<w:sectPr/></w:body></w:document>";
   const bytes = zip([
-    { name: "[Content_Types].xml", content: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>' },
+    { name: "[Content_Types].xml", content: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>' },
     { name: "_rels/.rels", content: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>' },
+    { name: "word/_rels/document.xml.rels", content: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>' },
+    { name: "word/styles.xml", content: STYLES_XML },
     { name: "word/document.xml", content: document },
   ]);
   if (bytes.byteLength > 12 * 1024 * 1024) throw new Error("The generated Word document exceeds the 12 MiB limit.");
