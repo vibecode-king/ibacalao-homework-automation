@@ -26,13 +26,15 @@ enum NativeRoutes {
     static let blockedExactPaths = ["/teachers"]
     // Production keeps Chat as the desktop home. A trusted Vercel preview lands
     // on Homework after authentication. Every host starts at the existing
-    // desktop-entry screen; there is no separate Homework sign-in screen.
+    // working sign-in (/native-login); no welcome or onboarding screens, and no
+    // separate Homework sign-in screen.
     static let chatLandingPath = "/chat"
     static let homeworkLandingPath = "/homework"
     static var landingPath: String {
         landingPath(for: LLMClient.resolvedNativeAPIBaseURL)
     }
     static let entryPath = "/desktop-entry"
+    static let signInPath = "/native-login"
     static let onboardingPath = "/onboarding"
 
     static func landingPath(for baseURL: String) -> String {
@@ -45,7 +47,7 @@ enum NativeRoutes {
     }
 
     static func initialLaunchPath(for baseURL: String) -> String {
-        entryPath
+        signInPath
     }
 
     // Hosts an OAuth consent screen genuinely has to visit mid-flow (see
