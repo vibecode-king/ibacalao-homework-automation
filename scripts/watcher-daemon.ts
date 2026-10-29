@@ -943,6 +943,12 @@ async function main(): Promise<void> {
     const session = await openForLogin(SCHOOL_DISCOVERY_PROFILE_KEY, "https://www.google.com/");
     const connection = await waitForDiscoveredLogin(session);
     if (connection) {
+      // Moodle and similar portals keep the sign-in in a session-only cookie that
+      // Chromium drops when the browser closes. Keep a private copy beside the
+      // profile so the next launch resumes the session instead of asking again.
+      if (!(await session.saveSessionCookies(connection.siteKey).catch(() => false))) {
+        console.warn(`[${connection.platformId}] could not keep the school session; the next launch may ask to sign in again`);
+      }
       saveSchoolConnection(connection);
       saveSchoolStatus(statusForConnection(connection));
       console.log(`${DISCOVERY_RESULT_PREFIX}${JSON.stringify(connection)}`);
