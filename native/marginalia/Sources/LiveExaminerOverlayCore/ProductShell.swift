@@ -24,22 +24,20 @@ enum NativeRoutes {
     // not yet live on ibacalao.com, but its subpaths (/teachers/calibration,
     // /demo, etc.) are real product tools that must stay reachable in-app.
     static let blockedExactPaths = ["/teachers"]
-    // Production keeps Chat as the desktop home. A trusted Vercel preview lands
-    // on Homework after authentication. Every host starts at the existing
+    // Homework is the only desktop home, on every host. The general Chat app is
+    // not part of this product. Every host starts at the existing
     // working sign-in (/native-login); no welcome or onboarding screens, and no
     // separate Homework sign-in screen.
-    static let chatLandingPath = "/chat"
     static let homeworkLandingPath = "/homework"
     static var landingPath: String {
         landingPath(for: LLMClient.resolvedNativeAPIBaseURL)
     }
     static let entryPath = "/desktop-entry"
-    static let signInPath = "/native-login"
+    static let signInPath = "/login?redirect=%2Fhomework"
     static let onboardingPath = "/onboarding"
 
     static func landingPath(for baseURL: String) -> String {
-        let host = URL(string: baseURL)?.host?.lowercased() ?? ""
-        return NativeHostPolicy.isTrustedPreviewHost(host) ? homeworkLandingPath : chatLandingPath
+        homeworkLandingPath
     }
 
     static var initialLaunchPath: String {
@@ -404,6 +402,16 @@ final class ShellWebCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, O
             decisionHandler(.cancel)
             return
         }
+        // The in-app sign-in route hands the session back with a redirect to
+        // ibacalao://auth. WKWebView cannot open a custom scheme itself and
+        // would turn it into a "Save As" download, so route it to the app.
+        if url.scheme == "ibacalao", url.host == "auth" {
+            // Signing in from the shell must stay in the shell, never pop the overlay.
+            ShellController.awaitingOAuthCallback = true
+            AppDelegate.shared?.handleAuthCallback(url)
+            decisionHandler(.cancel)
+            return
+        }
         guard navigationAction.targetFrame?.isMainFrame == true,
               url.scheme == "http" || url.scheme == "https"
         else {
@@ -624,7 +632,10 @@ final class ShellWebCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, O
         let ns = error as NSError
         // -999 (cancelled by a redirect/new load) and -1002 (unsupported URL,
         // e.g. a custom-scheme hop) are not connectivity failures.
-        if ns.domain != NSURLErrorDomain || (ns.code != NSURLErrorCancelled && ns.code != NSURLErrorUnsupportedURL) {
+        // WebKitErrorDomain 102 is "Frame load interrupted": a navigation we
+        // cancelled ourselves (e.g. the ibacalao://auth hop), not being offline.
+        let interruptedByPolicy = ns.domain == "WebKitErrorDomain" && ns.code == 102
+        if !interruptedByPolicy, ns.domain != NSURLErrorDomain || (ns.code != NSURLErrorCancelled && ns.code != NSURLErrorUnsupportedURL) {
             isOffline = true
         }
         // #region agent log
