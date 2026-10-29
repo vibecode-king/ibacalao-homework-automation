@@ -30,6 +30,7 @@ The command is a dry run by default. Applying a migration requires the explicit 
 2. Set an optional model name and save student-specific writing instructions in Settings. Leave the model name blank to use the local agent's `IBACALAO_LLM_MODEL` value or its default.
 3. In Overview, create a one-time pairing code. It expires after ten minutes and can be used once.
 4. On the computer where the worker runs, use `npm run pair` in the Homework worker repository. Enter the server URL shown in Overview and the pairing code. The worker exchanges the code directly with iBacalao and saves the server URL and long-lived token to its local `.env` with owner-only permissions. The token is not shown in the browser or printed by the worker. Pairing rotates any previous token.
+   An AI assistant can pair without prompts: `IBACALAO_PAIR_URL=<server> IBACALAO_PAIR_CODE=<code> npm run pair`. Homework Overview has a "Copy setup prompt" button that builds these instructions.
 5. Reload the worker's `.env` in the shell that will run it. In the worker repository, start with `npm start` or process at most one job with `npm run once`. The app monorepo runner is also available as `npm run agent:ping` or `npm run agent:ping:once` after loading the same `.env`.
 
 To load the pairing values before using the app monorepo runner:

@@ -88,11 +88,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidBecomeActive(_ notification: Notification) {
         engine.accessibilityTrusted = AccessibilityTextExtractor.isTrusted
         bringOverlayAlongIfVisible()
+        syncShellFocusState()
     }
 
     func applicationDidResignActive(_ notification: Notification) {
         // Keep the tip panel visible above the writing app we just left.
+        engine.setHotkeySuspended(false)
         bringOverlayAlongIfVisible()
+    }
+
+    /// True when the product shell (Homework, Chat) is the window the student is working in.
+    private var shellIsFrontmost: Bool {
+        NSApp.isActive && shellWindow?.isVisible == true && shellWindow.isKeyWindow
+    }
+
+    /// While the shell is in front the status-level tip panel would sit over the
+    /// page, and ⌘Return would capture the page instead of saving it.
+    private func syncShellFocusState() {
+        engine.setHotkeySuspended(shellIsFrontmost)
+        if shellIsFrontmost, overlayWindow?.isVisible == true, !engine.isBusy {
+            hideOverlay()
+        }
     }
 
     func application(_ application: NSApplication, open urls: [URL]) {
@@ -220,6 +236,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let hosting = NSHostingView(rootView: ShellView())
         hosting.sizingOptions = []
         shellWindow.contentView = hosting
+
+        // Clicking back into the shell while the app is already active does not
+        // fire applicationDidBecomeActive, so track the window itself.
+        for name in [NSWindow.didBecomeKeyNotification, NSWindow.didResignKeyNotification] {
+            NotificationCenter.default.addObserver(forName: name, object: shellWindow, queue: .main) { [weak self] _ in
+                Task { @MainActor in self?.syncShellFocusState() }
+            }
+        }
     }
 
     private func setupOverlayWindow() {
@@ -300,6 +324,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Keep the tip panel on the active Space and above the frontmost writing app.
     private func bringOverlayAlongIfVisible(reason: String = "refresh") {
         guard let overlayWindow, overlayWindow.isVisible else { return }
+        if shellIsFrontmost, !engine.isBusy {
+            syncShellFocusState()
+            return
+        }
         applyOverlaySharingType()
         applyOverlaySpaceBehavior(overlayWindow)
         // orderFrontRegardless keeps us visible without stealing key focus from Docs.

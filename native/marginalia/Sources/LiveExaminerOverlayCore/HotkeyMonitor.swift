@@ -12,6 +12,9 @@ final class HotkeyMonitor {
     private var hotKeyRef: EventHotKeyRef?
     private var handlerRef: EventHandlerRef?
     private var localMonitor: Any?
+    /// True while iBacalao's own product shell (Homework, Chat) is the frontmost
+    /// window. ⌘Return then belongs to the page (save, send), not to a screen capture.
+    private(set) var suspended = false
 
     /// Always true for the Carbon path — no Input Monitoring TCC needed.
     static var isTrusted: Bool { true }
@@ -29,7 +32,10 @@ final class HotkeyMonitor {
         installCarbonHotKey()
         // Local monitor so ⌘Return still fires when our own windows are key.
         localMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            if event.keyCode == UInt16(kVK_Return), event.modifierFlags.contains(.command) {
+            // Only the overlay panel itself keeps a local ⌘Return. In the product
+            // shell the key must reach the web page untouched.
+            if event.keyCode == UInt16(kVK_Return), event.modifierFlags.contains(.command),
+               event.window is KeyableOverlayWindow {
                 dlog("[Hotkey] ⌘Return (local)")
                 self?.onTrigger?()
                 return nil
@@ -37,6 +43,25 @@ final class HotkeyMonitor {
             return event
         }
         dlog("[Hotkey] started (carbon=\(hotKeyRef != nil), local=\(localMonitor != nil))")
+    }
+
+    /// Release the system-wide ⌘Return while the product shell is in front, and
+    /// take it back when another app is. Idempotent.
+    func setSuspended(_ value: Bool) {
+        guard value != suspended else { return }
+        suspended = value
+        if value {
+            if let hotKeyRef { UnregisterEventHotKey(hotKeyRef); self.hotKeyRef = nil }
+        } else if hotKeyRef == nil, handlerRef != nil {
+            registerHotKeyOnly()
+        }
+        dlog("[Hotkey] suspended=\(value)")
+    }
+
+    private func registerHotKeyOnly() {
+        let hotKeyID = EventHotKeyID(signature: OSType(0x4942_4143), id: 1)
+        let status = RegisterEventHotKey(UInt32(kVK_Return), UInt32(cmdKey), hotKeyID, GetEventDispatcherTarget(), 0, &hotKeyRef)
+        if status != noErr { dlog("[Hotkey] re-register failed: \(status)") }
     }
 
     func stop() {

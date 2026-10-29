@@ -61,15 +61,24 @@ async function main(): Promise<void> {
   const baseDefault = process.env.IBACALAO_BASE_URL?.trim()
     || envValue(existingEnv, "IBACALAO_BASE_URL")
     || DEFAULT_BASE_URL;
-  const terminal = createInterface({ input: stdin, output: stdout });
+  // Non-interactive path for an AI assistant: the one-time code (10 minutes, single use)
+  // may come from the environment. The long-lived token is never accepted or printed here.
+  const envUrl = process.env.IBACALAO_PAIR_URL?.trim();
+  const envCode = process.env.IBACALAO_PAIR_CODE?.trim();
   let baseUrl: string;
   let code: string;
-  try {
-    const enteredBaseUrl = await terminal.question(`iBacalao server URL [${baseDefault}]: `);
-    baseUrl = normalizeAgentServiceBaseUrl(enteredBaseUrl.trim() || baseDefault);
-    code = (await terminal.question("One-time pairing code: ")).trim();
-  } finally {
-    terminal.close();
+  if (envCode) {
+    baseUrl = normalizeAgentServiceBaseUrl(envUrl || baseDefault);
+    code = envCode;
+  } else {
+    const terminal = createInterface({ input: stdin, output: stdout });
+    try {
+      const enteredBaseUrl = await terminal.question(`iBacalao server URL [${baseDefault}]: `);
+      baseUrl = normalizeAgentServiceBaseUrl(enteredBaseUrl.trim() || baseDefault);
+      code = (await terminal.question("One-time pairing code: ")).trim();
+    } finally {
+      terminal.close();
+    }
   }
 
   if (!/^HWA-[A-F0-9]{24}$/i.test(code)) {

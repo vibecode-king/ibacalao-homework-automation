@@ -80,6 +80,9 @@ final class FeedbackEngine: ObservableObject {
         }
     }
 
+    /// See HotkeyMonitor.setSuspended: no capture hotkey while the product shell is in front.
+    func setHotkeySuspended(_ suspended: Bool) { hotkey.setSuspended(suspended) }
+
     func start() {
         hotkey.start()
         hotkeyTrusted = true
