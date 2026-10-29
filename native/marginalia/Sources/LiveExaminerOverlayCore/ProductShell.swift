@@ -24,11 +24,11 @@ enum NativeRoutes {
     // not yet live on ibacalao.com, but its subpaths (/teachers/calibration,
     // /demo, etc.) are real product tools that must stay reachable in-app.
     static let blockedExactPaths = ["/teachers"]
-    // Production keeps Chat as the desktop home. A trusted Vercel preview uses
-    // the existing Homework sign-in route and returns there after authentication.
+    // Production keeps Chat as the desktop home. A trusted Vercel preview lands
+    // on Homework after authentication. Every host starts at the existing
+    // desktop-entry screen; there is no separate Homework sign-in screen.
     static let chatLandingPath = "/chat"
     static let homeworkLandingPath = "/homework"
-    static let homeworkSignInPath = "/login?redirect=%2Fhomework"
     static var landingPath: String {
         landingPath(for: LLMClient.resolvedNativeAPIBaseURL)
     }
@@ -45,7 +45,7 @@ enum NativeRoutes {
     }
 
     static func initialLaunchPath(for baseURL: String) -> String {
-        landingPath(for: baseURL) == homeworkLandingPath ? homeworkSignInPath : entryPath
+        entryPath
     }
 
     // Hosts an OAuth consent screen genuinely has to visit mid-flow (see
