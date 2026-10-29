@@ -58,7 +58,7 @@ From CLAIMS, with their required qualifiers:
 ## Not established (do not claim)
 
 - A successful live end-to-end run: sign-in, school login, worker pairing, model call and real draft round trip have **not** been verified (READINESS, 2026-10-27).
-- "Entirely automatic" solving. Stage 2 (auto-queue on arrival) and an agent daemon that starts per job do not exist.
+- "Entirely automatic" solving. The website ingest route already queues new incremental assignments server-side (website repo `lib/assignmentJobs/ingest.ts`), but an explicit student opt-in switch for it is not built. The worker polls sequentially with daily job and token caps, an attempt limit and backoff; it has no concurrency and no per-job process spawn.
 - Auto-submit to a school. It is intentionally not built.
 - Production readiness. READINESS and AUDIT verdict is **NO-GO for student launch**. Production `main` of the website did not contain Better Auth or the DOCX routes at the time of the audit.
 - The exact source commit serving production is UNKNOWN.

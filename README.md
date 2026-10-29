@@ -103,7 +103,7 @@ Add your model settings to the `.env` created by pairing. Set `IBACALAO_LLM_API_
 | `IBACALAO_MAX_ATTEMPTS_PER_JOB` | Model attempts allowed for one assignment per day; defaults to 2. |
 | `IBACALAO_STATE_DIR` | Where the install id and daily counters are kept; defaults to `~/.ibacalao-homework`. |
 
-The scripts read environment variables from the process; they do not load `.env` automatically. In macOS/Linux bash or zsh, load it and check the connection:
+The worker scripts (`start`, `once`, `mcp`) load `./.env` automatically without overriding variables already set. To check the connection:
 
 ```sh
 set -a
