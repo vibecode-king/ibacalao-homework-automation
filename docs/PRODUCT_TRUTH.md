@@ -55,6 +55,16 @@ From CLAIMS, with their required qualifiers:
 - VERIFIED: IB guidance requires acknowledgement and referencing of AI-generated material in assessed work (`integrity.ib-ai-guidance`). Do not turn this into universal permission to use iBacalao.
 - BLOCKED, do not publish: "iBacalao does not submit drafts to Turnitin" (`privacy.no-turnitin-submission`). Never imply detector evasion.
 
+## Sign-in (working, verified 2026-10-29, do not change without the owner)
+
+Google sign-in works end to end on `www.ibacalao.com` in the installed Mac app. The owner confirmed it. Leave it alone.
+
+- The app starts at `/login?redirect=%2Fhomework` (the existing sign-in screen) and lands on `/homework` on every host. No Chat, welcome, onboarding or Homework-only sign-in screen.
+- Google runs on ibacalao.com. The page after Google is the HTML handoff page, never a bare redirect to `ibacalao://`.
+- Production keeps users, sessions and counters in Postgres (`kv_entries`), not Upstash (website PRs #193 and #194). Unsupported there: `SCAN` and the daily engine, device sync, mission completion and experiences `EVAL` scripts.
+- The app installs `ib_session` for all ibacalao.com hosts and removes older session cookies first. A stale cookie used to overwrite the fresh token and bounce the app back to Sign in.
+- The installed app is a debug build and reads `~/Library/Preferences/com.ibacalao.LiveExaminerOverlay.plist` (`ShellBaseURLOverride` = `https://www.ibacalao.com`). It is not sandboxed, so `defaults` writes to the wrong plist while the app runs.
+
 ## Not established (do not claim)
 
 - A successful live end-to-end run: sign-in, school login, worker pairing, model call and real draft round trip have **not** been verified (READINESS, 2026-10-27).
