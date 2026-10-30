@@ -26,9 +26,11 @@ Updated 2026-10-30 after the local implementation pass. Code status below is not
 - Website focused tests: 16 passed. Changed website files passed esbuild syntax bundling. The full website typecheck/build was not run because this worktree has no installed dependencies; no dependencies were installed.
 - `git diff --check` passed in both repositories.
 
-## Not committed, installed, or shipped
+## Local commit and release state
 
-- Worker repo: changes remain uncommitted on `isolate/desktop-app-and-watcher`; the website changes remain uncommitted in the `fix/homework-native-worker` worktree. Existing uncommitted user work was preserved.
+- Worker repo: `bc2fcaf` (`feat(homework): finish Moodle worker setup flow`) is committed locally on `isolate/desktop-app-and-watcher`.
+- Website repo: `c3c60e89e` (`fix(homework): harden status and database balances`) is committed locally on `fix/homework-native-worker`, rebased onto current `origin/dev`.
+- Both commits remain local and unpushed. Existing unrelated dirty work in the website primary checkout was preserved.
 - The installed `/Applications/iBacalao.app` was not replaced. `swift build` produced a local debug executable, not a packaged or installed app.
 - Nothing was pushed, deployed, or published. These changes are not available to users yet.
 - Recipes already learned on this Mac in ~/.ibacalao/school/recipes.json came from the old buggy classifier for some pages; new users start clean.
