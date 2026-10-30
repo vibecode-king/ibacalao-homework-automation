@@ -1,6 +1,6 @@
 # Homework Agent: implementation and release status
 
-Updated 2026-10-30 after the local implementation pass. Code status below is not release status.
+Updated 2026-10-30 after branch promotion. Code status below is not app-install or live-flow proof.
 
 ## Previously verified production behavior
 
@@ -23,21 +23,23 @@ Updated 2026-10-30 after the local implementation pass. Code status below is not
 - Worker `npm run check`: typecheck passed and 336 tests passed.
 - Worker bundle script created `homework-pair.cjs`, `homework-worker.cjs`, and `homework-setup.cjs` in `/tmp/ibacalao-homework-runtime-final-check`.
 - Native `swift build -c debug` passed. `swift test` could not run because this Swift toolchain has no `XCTest` module.
-- Website focused tests: 16 passed. Changed website files passed esbuild syntax bundling. The full website typecheck/build was not run because this worktree has no installed dependencies; no dependencies were installed.
+- Website focused tests: 16 passed. `tsc --noEmit` passed, and ESLint completed with 66 warnings and zero errors. The local `build:vercel` Next.js build exited at its 4 GB heap limit.
+- A Vercel feature preview for website commit `c3c60e89e` reached READY. Unauthenticated `/homework` returned 307 to sign-in; `/login` returned 200. A newer preview for `bc5e45f2e` is still building, and the merged dev deployment is queued.
+- GitHub Actions did not start its Typecheck and build job because account payment or spending limits blocked the runner.
 - `git diff --check` passed in both repositories.
 
-## Local commit and release state
+## Remote promotion and app release state
 
-- Worker repo: `bc2fcaf` (`feat(homework): finish Moodle worker setup flow`) is committed locally on `isolate/desktop-app-and-watcher`.
-- Website repo: `c3c60e89e` (`fix(homework): harden status and database balances`) is committed locally on `fix/homework-native-worker`, rebased onto current `origin/dev`.
-- Both commits remain local and unpushed. Existing unrelated dirty work in the website primary checkout was preserved.
+- Worker repo: `edf1026` (`docs(homework): update local commit handoff`) is at `origin/dev`, `origin/staging`, and `origin/main`. It includes the worker feature commit `bc2fcaf`.
+- Website repo: PR [#212](https://github.com/vibecode-king/ibacalao/pull/212) merged into `dev` as `6c81f1c`. Its feature branch head is `bc5e45f` (`test(homework): run CAS tests under CJS runner`). Website `staging` and `main` have not been updated.
+- Existing unrelated dirty work in the website primary checkout was preserved.
 - The installed `/Applications/iBacalao.app` was not replaced. `swift build` produced a local debug executable, not a packaged or installed app.
-- Nothing was pushed, deployed, or published. These changes are not available to users yet.
+- No production deployment or app package release was performed. These changes are not installed for users.
 - Recipes already learned on this Mac in ~/.ibacalao/school/recipes.json came from the old buggy classifier for some pages; new users start clean.
 
 ## Not tested
 
-- Full website Next.js build and typecheck.
+- Successful Vercel build for the latest website commit and merged dev deployment.
 - Native XCTest suite on a toolchain with XCTest available.
 - Production Postgres execution of the new balance SQL.
 - Any second user, another school, a clean Mac install, or a real authenticated Moodle assignment-to-draft flow.
