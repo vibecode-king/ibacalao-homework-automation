@@ -340,11 +340,25 @@ final class SchoolWatcherService {
             "startedAt": ISO8601DateFormatter().string(from: Date()),
             "missingCapabilities": status?.missingCapabilities ?? [],
         ]
+        let supportedBrowsers = ["com.google.Chrome", "com.microsoft.edgemac"]
+        guard let browser = supportedBrowsers
+            .compactMap({ NSWorkspace.shared.urlForApplication(withBundleIdentifier: $0) })
+            .first else {
+            throw SchoolWatcherError.browserOpenFailed
+        }
         let directory = learningSessionURL.deletingLastPathComponent()
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let data = try JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted, .sortedKeys])
         try data.write(to: learningSessionURL, options: .atomic)
-        guard NSWorkspace.shared.open(origin) else { throw SchoolWatcherError.browserOpenFailed }
+        let opener = Process()
+        opener.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+        opener.arguments = ["-a", browser.path, origin.absoluteString]
+        do {
+            try opener.run()
+        } catch {
+            try? FileManager.default.removeItem(at: learningSessionURL)
+            throw error
+        }
     }
 
     nonisolated static func parseDiscoveryOutput(_ output: String) -> SchoolPlatformConnection? {

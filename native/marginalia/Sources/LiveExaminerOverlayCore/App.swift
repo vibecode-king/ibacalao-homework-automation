@@ -163,11 +163,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let appMenuItem = NSMenuItem()
         mainMenu.addItem(appMenuItem)
-        let appMenu = NSMenu(title: "iBacalao")
-        appMenu.addItem(withTitle: "About iBacalao", action: nil, keyEquivalent: "")
+        let appMenu = NSMenu(title: "iBacalao Homework")
+        appMenu.addItem(withTitle: "About iBacalao Homework", action: nil, keyEquivalent: "")
         appMenu.addItem(NSMenuItem.separator())
         appMenu.addItem(NSMenuItem.separator())
-        appMenu.addItem(withTitle: "Quit iBacalao", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        appMenu.addItem(withTitle: "Quit iBacalao Homework", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         appMenuItem.submenu = appMenu
 
         // Required for ⌘V / ⌘C / ⌘X in text fields (SecureField included).
@@ -186,9 +186,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let windowMenuItem = NSMenuItem()
         mainMenu.addItem(windowMenuItem)
         let windowMenu = NSMenu(title: "Window")
-        windowMenu.addItem(withTitle: "iBacalao", action: #selector(showShell), keyEquivalent: "0")
-        windowMenu.addItem(withTitle: "Dispatch", action: #selector(showDispatch), keyEquivalent: "1")
-        windowMenu.addItem(withTitle: "Overlay", action: #selector(showOverlay), keyEquivalent: "2")
+        windowMenu.addItem(withTitle: "Homework", action: #selector(showShell), keyEquivalent: "0")
         windowMenuItem.submenu = windowMenu
 
         NSApp.mainMenu = mainMenu
@@ -339,25 +337,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Overlay-only: never open native-login or the old dashboard.
     }
 
-    /// Native Dispatch pairing — not the web coming-soon page.
+    /// Native school-browser handoff retained for Homework's existing connector flow.
     @objc func showDispatch() {
         dispatch.start()
         let hosting = NSHostingView(rootView: DispatchModePanel())
         hosting.sizingOptions = []
         dashboardWindow.contentView = hosting
-        dashboardWindow.title = "Dispatch"
+        dashboardWindow.title = "School connection"
         dashboardWindow.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
 
-    /// Primary CTA: show overlay, hide settings. Reuse the desktop website login.
+    /// Legacy overlay entry points return to the current Homework app.
     @objc func launchOverlay() {
-        Task { @MainActor in
-            await ShellController.shared?.syncWebsiteSessionIntoKeyStore()
-            dashboardWindow.orderOut(nil)
-            dispatch.start()
-            focusOverlay()
-        }
+        ShellController.shared?.load(path: "/homework?retired=1")
+        showShell()
     }
 
     @objc func hideOverlay() {
@@ -369,10 +363,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         dashboardWindow.orderOut(nil)
         shellWindow.orderOut(nil)
         focusOverlay()
-    }
-
-    @objc private func showOverlay() {
-        launchOverlay()
     }
 
     @objc private func showShell() {

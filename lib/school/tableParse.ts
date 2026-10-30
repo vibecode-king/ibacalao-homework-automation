@@ -25,10 +25,13 @@ const SKIP_HEADER = /\b(select|checkbox|#|n[oº°]|actions?|acciones)\b/i;
 const NON_ACADEMIC_TITLE = /^(?:title|actividad|assignment|tarea|subject|materia|fecha|status|estado)$/i;
 const NAV_CHROME_TITLE = /^(?:mensajer[ií]a|agenda|inicio|home|dashboard|calendar|calendario|perfil|profile|settings|configuraci[oó]n)$/i;
 
+/** Moodle error pages ("A required parameter (id) was missing") are not coursework. */
+const ERROR_PAGE_TITLE = /(?:required parameter|par[aá]metro necesario|can'?t find data record|no se puede encontrar|invalid (?:course|course module)|error (?:al|reading|de))/i;
+
 /** Table header cells and chrome labels must not become assignments. */
 export function isNonAcademicTitle(value: string): boolean {
   const trimmed = value.replace(/\s+/g, " ").trim();
-  return !trimmed || NON_ACADEMIC_TITLE.test(trimmed) || NAV_CHROME_TITLE.test(trimmed);
+  return !trimmed || NON_ACADEMIC_TITLE.test(trimmed) || NAV_CHROME_TITLE.test(trimmed) || ERROR_PAGE_TITLE.test(trimmed);
 }
 
 export type ColumnRole = "title" | "subject" | "dueAt" | "status" | "grade" | "ignore";

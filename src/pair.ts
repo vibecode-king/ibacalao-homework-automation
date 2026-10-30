@@ -1,5 +1,6 @@
-import { chmod, readFile, writeFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { chmod, readFile, rename, unlink, writeFile } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
+import { dirname, resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
 import { readBoundedModelResponse } from "./agentRunner";
@@ -52,8 +53,16 @@ async function savePairing(baseUrl: string, token: string): Promise<void> {
     "IBACALAO_AGENT_TOKEN",
     token,
   );
-  await writeFile(ENV_PATH, updated, { mode: 0o600 });
-  await chmod(ENV_PATH, 0o600);
+  const temporaryPath = resolve(dirname(ENV_PATH), `.env.${randomUUID()}.tmp`);
+  try {
+    await writeFile(temporaryPath, updated, { flag: "wx", mode: 0o600 });
+    await chmod(temporaryPath, 0o600);
+    await rename(temporaryPath, ENV_PATH);
+    await chmod(ENV_PATH, 0o600);
+  } catch (error) {
+    await unlink(temporaryPath).catch(() => undefined);
+    throw error;
+  }
 }
 
 async function main(): Promise<void> {
@@ -103,8 +112,10 @@ async function main(): Promise<void> {
   let payload: PairingResponse | null = null;
   try { payload = JSON.parse(responseText) as PairingResponse; } catch { /* handled below */ }
   if (!response.ok) {
-    const detail = typeof payload?.error === "string" ? payload.error : `HTTP ${response.status}`;
-    throw new Error(`iBacalao pairing failed: ${detail}`);
+    const detail = typeof payload?.error === "string"
+      ? payload.error.replace(/agt_[A-Za-z0-9_-]+/g, "[redacted]").slice(0, 180)
+      : `HTTP ${response.status}`;
+    throw new Error(`iBacalao pairing failed (HTTP ${response.status}): ${detail}`);
   }
   if (typeof payload?.token !== "string" || !/^agt_[A-Za-z0-9_-]{43}$/.test(payload.token)) {
     throw new Error("The server returned an invalid agent credential. Create a new pairing code and try again.");

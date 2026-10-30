@@ -1,3 +1,7 @@
+import { spawn } from "node:child_process";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { looksLikeHtmlDocument } from "./docx";
 import { normalizeAgentServiceBaseUrl } from "./network";
 
@@ -138,8 +142,58 @@ export async function readBoundedModelResponse(response: Response, maxBytes = MA
   }
 }
 
+const CLI_SYSTEM_PROMPT = "Return exactly one JSON object with artifactText and optional qaResult. artifactText must contain the complete document as plain text or Markdown, never HTML. Do not wrap it in Markdown. Do not use tools or read files.";
+
+export function cliRunnerFromEnv(): "claude" | "codex" | null {
+  const value = process.env.IBACALAO_AGENT_CLI?.trim().toLowerCase();
+  return value === "claude" || value === "codex" ? value : null;
+}
+
+/**
+ * Runs the student's own installed AI CLI. Fixed argv (no shell), tools off or
+ * read-only sandbox, an empty scratch directory, and no worker token in its env.
+ */
+async function runLocalCli(cli: "claude" | "codex", prompt: string, preferredModel?: string): Promise<AssignmentAgentResult> {
+  const model = (preferredModel ?? "").trim();
+  if (model && (model.length > 160 || model.startsWith("-") || /[\u0000-\u001f\u007f]/.test(model))) {
+    throw new Error("The configured model name is invalid.");
+  }
+  const dir = mkdtempSync(join(tmpdir(), "ibacalao-homework-"));
+  const outFile = join(dir, "last-message.txt");
+  const args = cli === "claude"
+    ? ["-p", "--tools", "", "--strict-mcp-config", "--no-session-persistence", ...(model ? ["--model", model] : [])]
+    : ["exec", "--sandbox", "read-only", "--skip-git-repo-check", "--ephemeral", "-o", outFile, ...(model ? ["-m", model] : []), "-"];
+  const { IBACALAO_AGENT_TOKEN: _token, ...env } = process.env;
+  try {
+    const stdout = await new Promise<string>((resolve, reject) => {
+      const child = spawn(cli, args, { cwd: dir, env, stdio: ["pipe", "pipe", "pipe"] });
+      let out = "";
+      let err = "";
+      const timer = setTimeout(() => { child.kill("SIGKILL"); reject(new Error("The AI took too long and was stopped.")); }, DEFAULT_TIMEOUT_MS);
+      child.stdout.on("data", (chunk) => { if (out.length < MAX_MODEL_RESPONSE_BYTES) out += chunk; });
+      child.stderr.on("data", (chunk) => { if (err.length < 4_000) err += chunk; });
+      child.on("error", (error) => { clearTimeout(timer); reject(new Error(`Could not start ${cli}: ${error.message}`)); });
+      child.on("close", (code) => {
+        clearTimeout(timer);
+        if (code === 0) resolve(out);
+        else reject(new Error(`${cli} exited with code ${code}. ${err.trim().slice(-200)}`));
+      });
+      child.stdin.end(`${CLI_SYSTEM_PROMPT}\n\n${prompt}`);
+    });
+    let text = stdout;
+    if (cli === "codex") {
+      try { text = readFileSync(outFile, "utf8"); } catch { /* fall back to stdout */ }
+    }
+    return parseAssignmentAgentResult(text, { engine: `${cli}-cli`, model: model || `${cli}-default` });
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
 /** Send the prompt only to the explicitly configured OpenAI-compatible endpoint. */
 export async function runConfiguredAssignmentAgent(prompt: string, preferredModel?: string): Promise<AssignmentAgentResult> {
+  const cli = cliRunnerFromEnv();
+  if (cli) return runLocalCli(cli, prompt, preferredModel);
   if (process.env.IBACALAO_AGENT_COMMAND?.trim()) {
     throw new Error("IBACALAO_AGENT_COMMAND is disabled because local CLI execution is not sandboxed. Unset it and configure IBACALAO_LLM_BASE_URL instead.");
   }

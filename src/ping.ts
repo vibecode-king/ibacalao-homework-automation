@@ -1,6 +1,6 @@
 import "./loadEnv";
 import { setTimeout as sleep } from "node:timers/promises";
-import { runConfiguredAssignmentAgent } from "./agentRunner";
+import { cliRunnerFromEnv, runConfiguredAssignmentAgent } from "./agentRunner";
 import { AgentApiError, createAgentApiClient } from "./client";
 import { buildDocxFromText } from "./docx";
 import { resolveAgentId } from "./agentId";
@@ -161,7 +161,7 @@ async function main(): Promise<void> {
   if (process.env.IBACALAO_AGENT_COMMAND?.trim()) {
     throw new Error("IBACALAO_AGENT_COMMAND is disabled because local CLI execution is not sandboxed. Unset it and configure IBACALAO_LLM_BASE_URL instead.");
   }
-  if (!process.env.IBACALAO_LLM_BASE_URL?.trim() && !process.env.IBACALAO_LLM_API_KEY?.trim()) {
+  if (!cliRunnerFromEnv() && !process.env.IBACALAO_LLM_BASE_URL?.trim() && !process.env.IBACALAO_LLM_API_KEY?.trim()) {
     throw new Error("Configure IBACALAO_LLM_BASE_URL for a BYOK or self-hosted model endpoint, and optionally set IBACALAO_LLM_API_KEY.");
   }
   console.log(`[homework-agent] Starting API mode (${once ? "one job" : `continuous polling every ${Math.ceil(pollMs / 1_000)} seconds`}).`);

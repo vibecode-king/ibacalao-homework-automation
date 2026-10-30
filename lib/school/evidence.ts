@@ -335,6 +335,12 @@ export function classifyDomCard(
     .join(" ");
   const routeHaystack = routePath;
 
+  // Moodle's assignment index lists a "Calificación" column and shares the page
+  // with the message drawer, so words alone would call these cards grades or
+  // messages. The route is the stronger signal.
+  if (/\/mod\/assign\//.test(routePath) && !/message-drawer/.test(`${card.groupSelector} ${card.selector}`)) {
+    return { card, entity: "assignment", confidence: 0.95 };
+  }
   if (card.grade || WORDS.grade.test(localHaystack)) {
     return { card, entity: "grade", confidence: card.grade ? 0.99 : 0.9 };
   }

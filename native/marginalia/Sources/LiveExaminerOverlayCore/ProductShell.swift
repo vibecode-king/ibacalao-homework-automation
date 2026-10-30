@@ -24,10 +24,8 @@ enum NativeRoutes {
     // not yet live on ibacalao.com, but its subpaths (/teachers/calibration,
     // /demo, etc.) are real product tools that must stay reachable in-app.
     static let blockedExactPaths = ["/teachers"]
-    // Homework is the only desktop home, on every host. The general Chat app is
-    // not part of this product. Every host starts at the existing
-    // working sign-in (/native-login); no welcome or onboarding screens, and no
-    // separate Homework sign-in screen.
+    // The active desktop product is Homework. Legacy product paths return to
+    // Homework with a retirement notice; the school-browser handoff stays native.
     static let homeworkLandingPath = "/homework"
     static var landingPath: String {
         landingPath(for: LLMClient.resolvedNativeAPIBaseURL)
@@ -97,6 +95,16 @@ enum NativeRoutes {
         return items.contains { $0.name == "view" && $0.value == "dispatch" }
     }
 
+    static func isRetiredProductRoute(_ url: URL) -> Bool {
+        let activeRoots = [
+            "/homework", "/login", "/school-connected", "/privacy", "/terms",
+            "/api", "/_next",
+        ]
+        let activeFiles = ["/favicon.ico", "/robots.txt", "/manifest.webmanifest", "/apple-touch-icon.png"]
+        if activeFiles.contains(url.path) { return false }
+        return !activeRoots.contains { url.path == $0 || url.path.hasPrefix($0 + "/") }
+    }
+
     static func isNativeStudentFeatureRoute(_ url: URL) -> Bool {
         if isDispatchRoute(url) { return false }
         switch url.path {
@@ -141,13 +149,13 @@ final class ShellMessageHandler: NSObject, WKScriptMessageHandler {
     ) {
         if message.name == "openMarginalia" {
             Task { @MainActor in
-                AppDelegate.shared?.launchOverlay()
+                ShellController.shared?.load(path: "/homework?retired=1")
             }
             return
         }
         if message.name == "openDispatch" {
             Task { @MainActor in
-                AppDelegate.shared?.showDispatch()
+                ShellController.shared?.load(path: "/homework?retired=1")
             }
             return
         }
@@ -398,7 +406,9 @@ final class ShellWebCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, O
             return
         }
         if url.scheme == "ibacalao", url.host == "overlay" {
-            AppDelegate.shared?.launchOverlay()
+            Task { @MainActor in
+                ShellController.shared?.load(path: "/homework?retired=1")
+            }
             decisionHandler(.cancel)
             return
         }
@@ -424,6 +434,13 @@ final class ShellWebCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, O
         let isOwnHost = allowedHosts.contains(host)
             || host.hasSuffix(".ibacalao.com")
             || NativeHostPolicy.isTrustedPreviewHost(host)
+        if isOwnHost, NativeRoutes.isRetiredProductRoute(url) {
+            decisionHandler(.cancel)
+            Task { @MainActor in
+                ShellController.shared?.load(path: "/homework?retired=1")
+            }
+            return
+        }
         if isOwnHost, NativeRoutes.isNativeStudentFeatureRoute(url) {
             let path = url.path + (url.query.map { "?\($0)" } ?? "")
             decisionHandler(.cancel)
@@ -757,21 +774,32 @@ final class ShellController: ObservableObject {
         dlog("[Shell] synced ib_session from \(cookie.domain)")
     }
 
+    enum SavedSessionState { case valid, rejected, unknown }
+
     /// Asks the site whether a saved session token still belongs to a user.
-    func savedSessionIsValid(_ token: String) async -> Bool {
-        guard let url = URL(string: "/api/auth/me", relativeTo: Self.base) else { return false }
+    /// Only a clean answer of "no user" is `.rejected`. A 5xx, timeout or
+    /// network error is `.unknown`, so a server hiccup never signs the student out.
+    func savedSessionState(_ token: String) async -> SavedSessionState {
+        guard let url = URL(string: "/api/auth/me", relativeTo: Self.base) else { return .unknown }
         var request = URLRequest(url: url, timeoutInterval: 8)
         request.setValue("ib_session=\(token)", forHTTPHeaderField: "Cookie")
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
             let status = (response as? HTTPURLResponse)?.statusCode ?? 0
             let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
-            let valid = json?["user"] != nil && !(json?["user"] is NSNull)
-            dlog("[Shell] saved session check status=\(status) valid=\(valid) host=\(url.host ?? "")")
-            return valid
+            let state: SavedSessionState
+            if status == 200, let json, json.keys.contains("user") {
+                state = json["user"] is NSNull ? .rejected : .valid
+            } else if status == 401 {
+                state = .rejected
+            } else {
+                state = .unknown
+            }
+            dlog("[Shell] saved session check status=\(status) state=\(state) host=\(url.host ?? "")")
+            return state
         } catch {
             dlog("[Shell] saved session check failed: \(error.localizedDescription)")
-            return false
+            return .unknown
         }
     }
 
@@ -857,13 +885,6 @@ final class ShellController: ObservableObject {
     }
 
     func load(path: String) {
-        if NativeWorkspaceNavigation.shared.canOpenNativePath(path) {
-            Task { @MainActor in
-                await syncWebsiteSessionIntoKeyStore()
-                _ = NativeWorkspaceNavigation.shared.openNativePath(path)
-            }
-            return
-        }
         NativeWorkspaceNavigation.shared.dismiss()
         lastPath = path
         Task { await performLoad(path: path) }
@@ -892,17 +913,8 @@ final class ShellController: ObservableObject {
     }
 
     func showSchoolConnection(_ connection: SchoolPlatformConnection) {
-        var components = URLComponents()
-        components.path = "/dashboard"
-        var items = [
-            URLQueryItem(name: "view", value: "dispatch"),
-            URLQueryItem(name: "schoolPlatform", value: connection.platformLabel),
-        ]
-        if let school = connection.schoolLabel, !school.isEmpty {
-            items.append(URLQueryItem(name: "schoolName", value: school))
-        }
-        components.queryItems = items
-        load(path: components.string ?? "/dashboard?view=dispatch")
+        dlog("[SchoolWatcher] connected to \(connection.platformLabel); returning to Homework")
+        load(path: "/homework?schoolConnected=1")
     }
 
     func emitDispatchStatus() {
@@ -1170,10 +1182,9 @@ private struct OfflineView: View {
     }
 }
 
-/// The product shell keeps the existing dashboard and broad product routes.
-/// The migrated student routes are intercepted into native SwiftUI screens
-/// inside this same window; they do not create a second dashboard or sidebar.
-/// Marginalia and Dispatch remain native features reachable from this shell.
+/// The native shell now exposes the Homework experience and its sign-in flow.
+/// Legacy product routes are redirected before they can open the old SwiftUI
+/// screens or web workspaces.
 struct ShellView: View {
     @StateObject private var controller = ShellController()
     @StateObject private var studentFeatures = NativeWorkspaceNavigation.shared
@@ -1224,8 +1235,11 @@ struct ShellView: View {
             Task { @MainActor in
                 // A still-valid saved session goes straight to Homework. Anything
                 // else starts at the existing sign-in screen.
-                if let saved = KeyStore.loadSessionToken(), !saved.isEmpty,
-                   await controller.savedSessionIsValid(saved) {
+                // A server error or no network is not a rejection: keep the saved
+                // login and let the page decide, so a hiccup never signs the student out.
+                let saved = KeyStore.loadSessionToken().flatMap { $0.isEmpty ? nil : $0 }
+                let state = saved == nil ? ShellController.SavedSessionState.rejected : await controller.savedSessionState(saved!)
+                if let saved, state != .rejected {
                     await controller.installSessionCookie(saved)
                     controller.load(path: NativeRoutes.landingPath)
                 } else {

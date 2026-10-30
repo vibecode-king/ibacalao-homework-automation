@@ -44,6 +44,10 @@ import { deriveSchoolStudentReport } from "../lib/school/studentReport";
 import { recordBlockerTransition } from "../lib/school/incidents";
 import { readReliabilitySnapshot } from "../lib/school/reliabilitySnapshot";
 import { evaluatePassiveSchoolSource, type PassiveLearningWindow } from "../lib/school/passiveEngine";
+import { loadCanonicalSchoolEntities, updateCanonicalSchoolEntity } from "../lib/school/entityStore";
+import { applyMoodleCapabilityEvidence } from "../lib/school/moodleCapabilityEvidence";
+import { readMoodleAssignmentDetail } from "../lib/watcher/moodleDetails";
+import { passiveUploadPlan } from "../lib/watcher/passiveUploadPlan";
 import { downloadPlatformMapOnce, proposePlatformMap, reportCapabilityFailures, type PlatformMapTarget } from "../lib/watcher/platformMapSync";
 import { goalsForFallback, logNavigationAttempt, startNavigationAttempt, uivisionFallbackEnabled } from "../lib/school/uivisionFallback";
 import { attemptNavigationGoal, resolveUivisionExtensionPath } from "../lib/watcher/uivisionNavigator";
@@ -303,7 +307,9 @@ function loadActiveLearningWindow(
   const value = raw as Record<string, unknown>;
   if (value.sourceKey !== sourceKey || value.origin !== connection.origin || typeof value.startedAt !== "string") return null;
   const startedAtMs = Date.parse(value.startedAt);
-  if (!Number.isFinite(startedAtMs) || startedAtMs > nowMs + 60_000 || nowMs - startedAtMs > LEARNING_WINDOW_MS) return null;
+  const currentStatus = loadSchoolStatus();
+  const stillLearning = Boolean(currentStatus?.missingCapabilities?.length || currentStatus?.incompleteCapabilities?.length);
+  if (!Number.isFinite(startedAtMs) || startedAtMs > nowMs + 60_000 || (nowMs - startedAtMs > LEARNING_WINDOW_MS && !stillLearning)) return null;
   const allowed = new Set<SchoolActionCapability>(REQUIRED_LEARNING_CAPABILITIES);
   const missingCapabilities = Array.isArray(value.missingCapabilities)
     ? value.missingCapabilities.filter((item): item is SchoolActionCapability => typeof item === "string" && allowed.has(item as SchoolActionCapability))
@@ -627,6 +633,9 @@ function platformMapTarget(connection: SchoolPlatformConnection): PlatformMapTar
   };
 }
 
+const moodleDetailRetryAt = new Map<string, number>();
+let nextMoodleDetailAt = 0;
+
 async function processPassiveConnection(
   connection: SchoolPlatformConnection,
   baseUrl: string,
@@ -648,6 +657,39 @@ async function processPassiveConnection(
     // must not reset what we know about grades.
     ...(previousCapabilities ? { previousCapabilities } : {}),
   });
+  // A list observation provides the assignment URLs. Read one detail page at a
+  // time through the same local browser profile, and revisit it periodically.
+  const now = Date.now();
+  if (now >= nextMoodleDetailAt) {
+    const entities = loadCanonicalSchoolEntities(sourceKey);
+    const candidate = entities.find((entity) => {
+      if (entity.kind !== "assignment" || !entity.record.url || (moodleDetailRetryAt.get(`${sourceKey}:${entity.id}`) ?? 0) > now) return false;
+      try {
+        const url = new URL(entity.record.url);
+        return url.origin === new URL(connection.origin).origin && url.pathname === "/mod/assign/view.php" && /^\d+$/.test(url.searchParams.get("id") ?? "");
+      } catch { return false; }
+    });
+    if (candidate) {
+      nextMoodleDetailAt = now + 5_000;
+      const key = `${sourceKey}:${candidate.id}`;
+      moodleDetailRetryAt.set(key, now + 5 * 60_000);
+      try {
+        const session = await getOrOpenSession(connection.platformId, connection.profileKey);
+        const detail = await readMoodleAssignmentDetail(session.context, connection.origin, candidate.record);
+        if (detail) {
+          moodleDetailRetryAt.set(key, now + 30 * 60_000);
+          const enriched = { ...candidate.record, ...detail, changeKind: "enriched" as const };
+          updateCanonicalSchoolEntity(sourceKey, { ...candidate, record: enriched, sourceDetail: detail.detail, updatedAt: new Date().toISOString() });
+          const index = evaluation.records.findIndex((record) => record.sourceRecordId === candidate.id);
+          if (index >= 0) evaluation.records[index] = enriched;
+          else evaluation.records.push(enriched);
+        }
+      } catch (error) {
+        console.warn(`[${sourceKey}] assignment detail read failed:`, error instanceof Error ? error.message : error);
+      }
+    }
+  }
+  evaluation.status = applyMoodleCapabilityEvidence(evaluation.status, loadCanonicalSchoolEntities(sourceKey));
   const state = loadPassiveState(sourceKey);
   if (evaluation.records.length > 0) {
     const hasBaseline = Object.keys(state.fingerprints).length > 0;
@@ -659,7 +701,13 @@ async function processPassiveConnection(
     try {
       let serverAck: unknown = { mode, skipped: "no_uploadable_delta" };
       if (hasUploadableChanges(delta)) {
-        serverAck = await upload(sourceKey, [...delta.added, ...delta.changed], mode, [], baseUrl, token);
+        const changes = [...delta.added, ...delta.changed];
+        // The ingest endpoint can queue incremental assignments when its
+        // auto-queue flag is enabled. Send enrichments as bootstrap so
+        // learning more about existing work cannot create a job.
+        for (const batch of passiveUploadPlan(changes, mode)) {
+          serverAck = await upload(sourceKey, batch.records, batch.mode, [], baseUrl, token);
+        }
       }
       endDeliveryLineage(lineage, { acked: true, serverAck });
     } catch (error) {

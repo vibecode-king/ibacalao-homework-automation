@@ -100,6 +100,7 @@ test("Ping Bot builds a DOCX, uploads multipart data, and retries the identical 
 
   const env: NodeJS.ProcessEnv = {
     ...process.env,
+    IBACALAO_AGENT_CLI: "",
     IBACALAO_BASE_URL: `http://127.0.0.1:${address.port}`,
     IBACALAO_AGENT_TOKEN: "agt_test_token",
     IBACALAO_AGENT_ID: "homework-agent-e2e",
@@ -142,6 +143,7 @@ test("Ping Bot builds a DOCX, uploads multipart data, and retries the identical 
 test("Homework agent rejects local CLI mode before claiming an assignment", async () => {
   const env = {
     ...process.env,
+    IBACALAO_AGENT_CLI: "",
     IBACALAO_BASE_URL: "http://127.0.0.1:1",
     IBACALAO_AGENT_TOKEN: "agt_test_token",
     IBACALAO_AGENT_COMMAND: process.execPath,
@@ -182,6 +184,7 @@ test("Homework agent rejects an oversized agent API response before parsing or c
 
   const env: NodeJS.ProcessEnv = {
     ...process.env,
+    IBACALAO_AGENT_CLI: "",
     IBACALAO_BASE_URL: `http://127.0.0.1:${address.port}`,
     IBACALAO_AGENT_TOKEN: "agt_synthetic-test-token",
     IBACALAO_AGENT_ID: "homework-agent-size-test",
@@ -257,6 +260,7 @@ test("Ping Bot releases a job when the server rejects a completion with a non-re
 
   const env: NodeJS.ProcessEnv = {
     ...process.env,
+    IBACALAO_AGENT_CLI: "",
     IBACALAO_BASE_URL: "http://127.0.0.1:" + address.port,
     IBACALAO_AGENT_TOKEN: "agt_test_token",
     IBACALAO_AGENT_ID: "homework-agent-rejected-completion",

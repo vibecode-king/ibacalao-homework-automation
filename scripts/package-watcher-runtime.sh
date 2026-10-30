@@ -24,6 +24,7 @@ npx --no-install esbuild "$ROOT_DIR/scripts/watcher-daemon.ts" \
   --target=node22 \
   --external:playwright \
   --outfile="$OUTPUT_DIR/watcher-daemon.cjs"
+bash "$ROOT_DIR/scripts/bundle-homework-worker.sh" "$OUTPUT_DIR"
 
 "$ROOT_DIR/scripts/build-scrapling-helper.sh" "$OUTPUT_DIR"
 

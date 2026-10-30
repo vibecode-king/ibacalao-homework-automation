@@ -206,6 +206,7 @@ echo "==> Refreshing bundled school watcher daemon"
     --external:playwright \
     --outfile="$WATCHER_RUNTIME/watcher-daemon.cjs"
 )
+bash "$ROOT_DIR/scripts/bundle-homework-worker.sh" "$WATCHER_RUNTIME"
 
 if [ -f "Sources/LiveExaminerOverlayCore/Resources/logo.png" ]; then
   cp "Sources/LiveExaminerOverlayCore/Resources/logo.png" "$APP/Contents/Resources/logo.png"
@@ -333,6 +334,7 @@ install_to_applications() {
       # Runtime dependencies already exist in the installed app; update only the
       # daemon so normal DEV rebuilds do not recopy Chromium/Node unnecessarily.
       cp "$WATCHER_RUNTIME/watcher-daemon.cjs" "$INSTALL_APP/Contents/Resources/WatcherRuntime/watcher-daemon.cjs"
+      cp "$WATCHER_RUNTIME"/homework-*.cjs "$INSTALL_APP/Contents/Resources/WatcherRuntime/"
     else
       rm -rf "$INSTALL_APP/Contents/Resources/WatcherRuntime"
       cp -R "$WATCHER_RUNTIME" "$INSTALL_APP/Contents/Resources/WatcherRuntime"
@@ -378,6 +380,7 @@ install_to_applications() {
     mkdir -p "$LEGACY_INSTALL_APP/Contents/Resources/WatcherRuntime"
     if [ -x "$LEGACY_INSTALL_APP/Contents/Resources/WatcherRuntime/node/bin/node" ]; then
       cp "$WATCHER_RUNTIME/watcher-daemon.cjs" "$LEGACY_INSTALL_APP/Contents/Resources/WatcherRuntime/watcher-daemon.cjs"
+      cp "$WATCHER_RUNTIME"/homework-*.cjs "$LEGACY_INSTALL_APP/Contents/Resources/WatcherRuntime/"
     else
       rm -rf "$LEGACY_INSTALL_APP/Contents/Resources/WatcherRuntime"
       cp -R "$WATCHER_RUNTIME" "$LEGACY_INSTALL_APP/Contents/Resources/WatcherRuntime"

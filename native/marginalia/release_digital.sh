@@ -147,6 +147,7 @@ echo "==> Bundling watcher script into the app"
 )
 
 echo "==> Building Scrapling parser helper into the app"
+bash "$ROOT_DIR/scripts/bundle-homework-worker.sh" "$WATCHER_RUNTIME"
 "$ROOT_DIR/scripts/build-scrapling-helper.sh" "$WATCHER_RUNTIME"
 codesign --force --options runtime --sign "$IDENTITY" --timestamp "$WATCHER_RUNTIME/scrapling-repair"
 
