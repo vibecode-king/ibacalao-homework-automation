@@ -6,7 +6,12 @@ const DOCX_MIME_TYPE = "application/vnd.openxmlformats-officedocument.wordproces
 
 export class AgentApiError extends Error {
   constructor(readonly status: number, message: string) {
-    super("iBacalao agent API returned " + status + ": " + message);
+    const userMessage = status === 401
+      ? "This Homework worker is no longer paired. In Homework, open Overview → Connect the Homework worker and create a one-time pairing code. Then run `npm run pair` in the worker folder and restart the worker."
+      : status === 403 && message === "ai_consent_required"
+        ? "AI-processing consent is required before this worker can claim an assignment. Enable consent in the signed-in Homework app, then retry."
+        : `iBacalao agent API returned ${status}: ${message}`;
+    super(userMessage);
     this.name = "AgentApiError";
   }
 }

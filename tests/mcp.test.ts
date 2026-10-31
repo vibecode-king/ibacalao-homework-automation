@@ -70,3 +70,33 @@ test("MCP server claims, submits and fails jobs through the iBacalao API without
     await new Promise((r) => server.close(r));
   }
 });
+
+test("MCP claim shows safe reconnect steps when the worker token is rejected", async () => {
+  const token = "agt_test_token_that_must_not_be_echoed";
+  const server = createServer((_req, res) => {
+    res.writeHead(401, { "content-type": "application/json" });
+    res.end(JSON.stringify({ error: "Unauthorized" }));
+  });
+  await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
+  const port = (server.address() as { port: number }).port;
+  const transport = new StdioClientTransport({
+    command: process.execPath,
+    args: ["--import", "tsx", join(process.cwd(), "src/mcp.ts")],
+    env: { PATH: process.env.PATH ?? "", IBACALAO_BASE_URL: `http://127.0.0.1:${port}`, IBACALAO_AGENT_TOKEN: token },
+  });
+  const client = new Client({ name: "test", version: "0" });
+  try {
+    await client.connect(transport);
+    const result = await client.callTool({ name: "claim_homework_job", arguments: {} });
+    const message = (result.content as Array<{ text: string }>)[0].text;
+    assert.equal(result.isError, true);
+    assert.match(message, /no longer paired/);
+    assert.match(message, /create a one-time pairing code/);
+    assert.match(message, /npm run pair/);
+    assert.match(message, /restart the worker/);
+    assert.doesNotMatch(message, /agt_test_token_that_must_not_be_echoed/);
+  } finally {
+    await client.close();
+    await new Promise((r) => server.close(r));
+  }
+});
