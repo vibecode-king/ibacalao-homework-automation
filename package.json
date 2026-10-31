@@ -16,6 +16,7 @@
     "check": "npm run typecheck && npm test",
     "mcp": "tsx src/mcp.ts",
     "watcher:bundle": "esbuild scripts/watcher-daemon.ts --bundle --platform=node --format=cjs --target=node22 --external:playwright --outfile=dist/watcher-daemon.cjs",
+    "worker:windows:setup": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-homework-worker-windows.ps1",
     "release:check": "node scripts/check-release-version.cjs",
     "desktop:build": "bash native/marginalia/build_app.sh"
   },

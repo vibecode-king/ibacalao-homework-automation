@@ -114,7 +114,7 @@ npm run once   # process one job if the server releases one
 npm start      # keep polling and reporting health
 ```
 
-See [.env.example](.env.example) for the model settings template. On Windows, set the values in your shell or MCP app configuration.
+See [.env.example](.env.example) for the model settings template. Windows users can run the worker in the background with [the Windows setup guide](docs/windows-worker-setup.md). The native desktop app remains macOS-only.
 
 </details>
 

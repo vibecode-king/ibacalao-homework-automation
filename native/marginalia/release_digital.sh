@@ -118,6 +118,20 @@ for asset in Sources/LiveExaminerOverlayCore/Resources/tool-*; do
   if [ -f "$asset" ]; then cp "$asset" "$APP/Contents/Resources/$(basename "$asset")"; fi
 done
 
+# Info.plist names AppIcon and NSDockTilePlugIn. A release bundle must contain
+# both the checked-in icon assets and the separately built Dock tile plugin.
+for asset in Assets.car AppIcon.icns AppIconDock.png; do
+  source="Sources/LiveExaminerOverlayCore/Resources/$asset"
+  if [ ! -f "$source" ]; then
+    echo "ERROR: Missing required app icon asset: $source" >&2
+    exit 1
+  fi
+  cp "$source" "$APP/Contents/Resources/$asset"
+done
+
+DOCK_PLUGIN="$APP/Contents/PlugIns/iBacalaoDockTile.docktileplugin"
+bash ./build_dock_tile_plugin.sh "$DOCK_PLUGIN"
+
 # The heavy runtime (Node, Playwright, Chromium; ~230 MB) is not shipped in
 # the DMG and not hosted by iBacalao. The app downloads each piece from its
 # official public source after install (WatcherRuntimeInstaller.swift), pinned
@@ -159,6 +173,14 @@ codesign --force --options runtime \
   --sign "$IDENTITY" \
   --timestamp \
   "$APP/Contents/MacOS/iBacalaoSchoolBridge"
+codesign --force --options runtime \
+  --sign "$IDENTITY" \
+  --timestamp \
+  "$DOCK_PLUGIN/Contents/MacOS/iBacalaoDockTile"
+codesign --force --options runtime \
+  --sign "$IDENTITY" \
+  --timestamp \
+  "$DOCK_PLUGIN"
 codesign --force --options runtime \
   --sign "$IDENTITY" \
   --identifier "$BUNDLE_ID" \
