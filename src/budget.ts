@@ -28,6 +28,7 @@ const dayKey = (now: Date) => `${now.getFullYear()}-${String(now.getMonth() + 1)
  */
 export class DailyBudget {
   private usage: Usage;
+  private persistFailed = false;
   constructor(
     private readonly limits: BudgetLimits,
     private readonly file = join(process.env.IBACALAO_STATE_DIR?.trim() || join(homedir(), ".ibacalao-homework"), "usage.json"),
@@ -36,27 +37,48 @@ export class DailyBudget {
     this.usage = this.load();
   }
 
+  private blockedUsage(today: string): Usage {
+    return { day: today, jobs: this.limits.maxJobsPerDay, tokens: this.limits.maxTokensPerDay, attempts: {} };
+  }
+
   private load(): Usage {
     const today = dayKey(this.clock());
     try {
       if (existsSync(this.file)) {
         const parsed = JSON.parse(readFileSync(this.file, "utf8")) as Partial<Usage>;
-        if (parsed.day === today && Number.isFinite(parsed.jobs) && Number.isFinite(parsed.tokens)) {
-          return { day: today, jobs: Number(parsed.jobs), tokens: Number(parsed.tokens), attempts: parsed.attempts && typeof parsed.attempts === "object" ? parsed.attempts : {} };
+        if (parsed.day === today) {
+          if (Number.isFinite(parsed.jobs) && Number.isFinite(parsed.tokens)) {
+            return { day: today, jobs: Number(parsed.jobs), tokens: Number(parsed.tokens), attempts: parsed.attempts && typeof parsed.attempts === "object" ? parsed.attempts : {} };
+          }
+          this.persistFailed = true;
+          return this.blockedUsage(today);
         }
       }
-    } catch { /* corrupt file: start the day fresh */ }
-    return { day: today, jobs: 0, tokens: 0, attempts: {} };
+    } catch {
+      this.persistFailed = true;
+      return this.blockedUsage(today);
+    }
+    const fresh: Usage = { day: today, jobs: 0, tokens: 0, attempts: {} };
+    return this.write(fresh) ? fresh : this.blockedUsage(today);
   }
 
-  private save(): void {
+  private write(usage: Usage): boolean {
     try {
       mkdirSync(join(this.file, ".."), { recursive: true, mode: 0o700 });
       const tmp = `${this.file}.tmp`;
-      writeFileSync(tmp, JSON.stringify(this.usage), { mode: 0o600 });
+      writeFileSync(tmp, JSON.stringify(usage), { mode: 0o600 });
       chmodSync(tmp, 0o600);
       renameSync(tmp, this.file);
-    } catch { /* read-only home: counters still hold for this process */ }
+      this.persistFailed = false;
+      return true;
+    } catch {
+      this.persistFailed = true;
+      return false;
+    }
+  }
+
+  private save(): boolean {
+    return this.write(this.usage);
   }
 
   private rollover(): void {
@@ -66,6 +88,7 @@ export class DailyBudget {
   /** Reason string when no further job may be started today, otherwise null. */
   blockedReason(): string | null {
     this.rollover();
+    if (this.persistFailed) return "usage counters could not be saved";
     if (this.usage.jobs >= this.limits.maxJobsPerDay) return `daily job cap of ${this.limits.maxJobsPerDay} reached`;
     if (this.usage.tokens >= this.limits.maxTokensPerDay) return `daily token cap of ${this.limits.maxTokensPerDay} reached`;
     return null;
@@ -74,12 +97,12 @@ export class DailyBudget {
   /** Counts a model attempt for this job. False when it already used its attempts. */
   beginAttempt(jobId: string): boolean {
     this.rollover();
+    if (this.persistFailed) return false;
     const used = this.usage.attempts[jobId] ?? 0;
     if (used >= this.limits.maxAttemptsPerJob) return false;
     this.usage.attempts[jobId] = used + 1;
     this.usage.jobs += 1;
-    this.save();
-    return true;
+    return this.save();
   }
 
   recordTokens(tokens: number): void {

@@ -16,10 +16,19 @@ import { basename, join } from "node:path";
 
 export const SCHOOL_DOCS_DIR = join(homedir(), ".ibacalao", "school-docs");
 const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+const ASSIGNMENT_KEY = /^[A-Za-z0-9][A-Za-z0-9._-]{0,119}$/;
 
 /** Same rule as SchoolDocHandler.safeKey in Swift. */
+export function isSchoolDocKey(key: string): boolean {
+  return ASSIGNMENT_KEY.test(key) && !key.includes("..");
+}
+
 export function schoolDocKey(sourceRecordId: string): string {
-  return sourceRecordId.replace(/[^A-Za-z0-9._-]/g, "_").slice(0, 120);
+  const mapped = sourceRecordId.replace(/[^A-Za-z0-9._-]/g, "_").slice(0, 120);
+  if (!isSchoolDocKey(mapped)) {
+    throw new Error("invalid school doc key");
+  }
+  return mapped;
 }
 
 export function saveSchoolOriginal(
@@ -28,7 +37,13 @@ export function saveSchoolOriginal(
   bytes: Uint8Array,
   root: string = SCHOOL_DOCS_DIR,
 ): string {
-  const dir = join(root, "originals", schoolDocKey(sourceRecordId));
+  let key: string;
+  try {
+    key = schoolDocKey(sourceRecordId);
+  } catch {
+    return "";
+  }
+  const dir = join(root, "originals", key);
   mkdirSync(dir, { recursive: true });
   const safeName = basename(fileName).replace(/[\\/:\0]/g, "_").slice(0, 160) || "attachment";
   const path = join(dir, safeName);
@@ -36,23 +51,47 @@ export function saveSchoolOriginal(
   return path;
 }
 
-/** Deletes originals folders and draft files older than 30 days. Never throws:
+function prunePath(path: string, now: number): number {
+  try {
+    if (now - statSync(path).mtimeMs > MAX_AGE_MS) {
+      rmSync(path, { recursive: true, force: true });
+      return 1;
+    }
+  } catch { /* ignore one bad entry */ }
+  return 0;
+}
+
+/** Deletes original files and draft files older than 30 days. Never throws:
  *  cleanup must not be able to take the watcher down. */
 export function pruneSchoolDocs(root: string = SCHOOL_DOCS_DIR, now: number = Date.now()): number {
   let removed = 0;
-  for (const sub of ["originals", "drafts"]) {
-    const dir = join(root, sub);
-    let entries: string[];
-    try { entries = readdirSync(dir); } catch { continue; }
-    for (const name of entries) {
-      const path = join(dir, name);
+  const originals = join(root, "originals");
+  let folders: string[] = [];
+  try { folders = readdirSync(originals); } catch { folders = []; }
+  for (const name of folders) {
+    const folder = join(originals, name);
+    try {
+      if (!statSync(folder).isDirectory()) {
+        removed += prunePath(folder, now);
+        continue;
+      }
+      let files: string[] = [];
+      try { files = readdirSync(folder); } catch { continue; }
+      for (const fileName of files) {
+        removed += prunePath(join(folder, fileName), now);
+      }
       try {
-        if (now - statSync(path).mtimeMs > MAX_AGE_MS) {
-          rmSync(path, { recursive: true, force: true });
-          removed += 1;
+        if (readdirSync(folder).length === 0) {
+          rmSync(folder, { recursive: true, force: true });
         }
-      } catch { /* ignore one bad entry */ }
-    }
+      } catch { /* ignore */ }
+    } catch { /* ignore one bad folder */ }
+  }
+  const drafts = join(root, "drafts");
+  let draftFiles: string[] = [];
+  try { draftFiles = readdirSync(drafts); } catch { draftFiles = []; }
+  for (const name of draftFiles) {
+    removed += prunePath(join(drafts, name), now);
   }
   return removed;
 }

@@ -24,6 +24,10 @@ final class SchoolDocHandler: NSObject, WKScriptMessageHandlerWithReply {
         didReceive message: WKScriptMessage,
         replyHandler: @escaping (Any?, String?) -> Void
     ) {
+        guard allowsNativeScriptMessage(message) else {
+            replyHandler(nil, "forbidden")
+            return
+        }
         guard let body = message.body as? [String: Any], let action = body["action"] as? String else {
             replyHandler(nil, "bad_request")
             return
@@ -89,7 +93,7 @@ final class SchoolDocHandler: NSObject, WKScriptMessageHandlerWithReply {
     nonisolated static let importExtensions: Set<String> = ["docx", "doc", "odt", "rtf", "pdf", "txt"]
 
     nonisolated static func openOriginal(key: String) async throws -> [String: Any] {
-        let dir = root.appendingPathComponent("originals/\(key)", isDirectory: true)
+        let dir = try originalsDirectory(key: key)
         let files = ((try? FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil)) ?? [])
             .filter { importExtensions.contains($0.pathExtension.lowercased()) && !$0.lastPathComponent.hasPrefix(".") }
             .sorted { $0.lastPathComponent < $1.lastPathComponent }
@@ -109,7 +113,7 @@ final class SchoolDocHandler: NSObject, WKScriptMessageHandlerWithReply {
         guard importExtensions.contains((name as NSString).pathExtension.lowercased()),
               !data.isEmpty, data.count <= 25 * 1024 * 1024 else { throw SchoolDocError.badRequest }
         let fm = FileManager.default
-        let dir = root.appendingPathComponent("originals/\(key)", isDirectory: true)
+        let dir = try originalsDirectory(key: key)
         try? fm.removeItem(at: dir)
         try fm.createDirectory(at: dir, withIntermediateDirectories: true)
         try data.write(to: dir.appendingPathComponent(String(name.prefix(160))), options: .atomic)
@@ -127,7 +131,7 @@ final class SchoolDocHandler: NSObject, WKScriptMessageHandlerWithReply {
                 return ["source": "draft", "html": html, "fileName": draft.lastPathComponent]
             }
         }
-        let originals = root.appendingPathComponent("originals/\(key)", isDirectory: true)
+        let originals = try originalsDirectory(key: key)
         let files = ((try? fm.contentsOfDirectory(at: originals, includingPropertiesForKeys: nil)) ?? [])
             .filter { !$0.lastPathComponent.hasPrefix(".") }
             .sorted { $0.lastPathComponent < $1.lastPathComponent }
@@ -180,14 +184,35 @@ final class SchoolDocHandler: NSObject, WKScriptMessageHandlerWithReply {
 
     nonisolated static func key(_ body: [String: Any]) throws -> String {
         guard let raw = body["key"] as? String, !raw.isEmpty else { throw SchoolDocError.badRequest }
-        return safeKey(raw)
+        return try safeKey(raw)
     }
 
     /// Same rule as schoolDocKey in lib/watcher/schoolDocs.ts.
-    nonisolated static func safeKey(_ raw: String) -> String {
+    nonisolated static func safeKey(_ raw: String) throws -> String {
         let allowed = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-")
         let mapped = raw.unicodeScalars.map { allowed.contains($0) ? String($0) : "_" }.joined()
-        return String(mapped.prefix(120))
+        let key = String(mapped.prefix(120))
+        guard isAssignmentKey(key) else { throw SchoolDocError.badRequest }
+        return key
+    }
+
+    /// Alphanumeric start, no `.` / `..` path segments, no `..` anywhere.
+    nonisolated static func isAssignmentKey(_ key: String) -> Bool {
+        if key.isEmpty || key.count > 120 { return false }
+        if key.contains("..") { return false }
+        let first = key.unicodeScalars.first.map { CharacterSet.alphanumerics.contains($0) } ?? false
+        guard first else { return false }
+        let allowed = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-")
+        return key.unicodeScalars.allSatisfy { allowed.contains($0) }
+    }
+
+    nonisolated static func originalsDirectory(key: String) throws -> URL {
+        guard isAssignmentKey(key) else { throw SchoolDocError.badRequest }
+        let originals = root.appendingPathComponent("originals", isDirectory: true).standardizedFileURL
+        let dir = originals.appendingPathComponent(key, isDirectory: true).standardizedFileURL
+        let prefix = originals.path.hasSuffix("/") ? originals.path : originals.path + "/"
+        guard dir.path.hasPrefix(prefix) else { throw SchoolDocError.badRequest }
+        return dir
     }
 
     nonisolated static func draftFile(_ key: String) -> URL? {
@@ -207,16 +232,34 @@ final class SchoolDocHandler: NSObject, WKScriptMessageHandlerWithReply {
         }
     }
 
-    /// Mirrors pruneSchoolDocs: anything untouched for 30 days goes.
+    /// Mirrors pruneSchoolDocs: each original file and each draft file older
+    /// than 30 days is removed. Assignment folders are not kept alive by a new
+    /// sibling attachment.
     nonisolated static func prune() {
         let fm = FileManager.default
-        for sub in ["originals", "drafts"] {
-            let dir = root.appendingPathComponent(sub, isDirectory: true)
-            let entries = (try? fm.contentsOfDirectory(at: dir, includingPropertiesForKeys: [.contentModificationDateKey])) ?? []
-            for entry in entries {
-                let modified = (try? entry.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate ?? Date()
-                if Date().timeIntervalSince(modified) > maxAge { try? fm.removeItem(at: entry) }
+        let originals = root.appendingPathComponent("originals", isDirectory: true)
+        let folders = (try? fm.contentsOfDirectory(at: originals, includingPropertiesForKeys: nil)) ?? []
+        for folder in folders {
+            var isDirectory: ObjCBool = false
+            guard fm.fileExists(atPath: folder.path, isDirectory: &isDirectory) else { continue }
+            if isDirectory.boolValue {
+                let files = (try? fm.contentsOfDirectory(at: folder, includingPropertiesForKeys: [.contentModificationDateKey])) ?? []
+                for file in files {
+                    let modified = (try? file.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate ?? Date()
+                    if Date().timeIntervalSince(modified) > maxAge { try? fm.removeItem(at: file) }
+                }
+                let leftover = (try? fm.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)) ?? []
+                if leftover.isEmpty { try? fm.removeItem(at: folder) }
+            } else {
+                let modified = (try? folder.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate ?? Date()
+                if Date().timeIntervalSince(modified) > maxAge { try? fm.removeItem(at: folder) }
             }
+        }
+        let drafts = root.appendingPathComponent("drafts", isDirectory: true)
+        let draftFiles = (try? fm.contentsOfDirectory(at: drafts, includingPropertiesForKeys: [.contentModificationDateKey])) ?? []
+        for file in draftFiles {
+            let modified = (try? file.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate ?? Date()
+            if Date().timeIntervalSince(modified) > maxAge { try? fm.removeItem(at: file) }
         }
     }
 

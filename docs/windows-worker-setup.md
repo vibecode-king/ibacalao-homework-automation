@@ -6,7 +6,7 @@ The native SwiftUI desktop app in this repository is macOS-only. On Windows, use
 
 1. Install Node.js 20.12 or newer.
 2. Clone this repository, open PowerShell in the repository, and run `npm ci`.
-3. In Homework, create a one-time worker connection code. Then run `npm run pair` in PowerShell and follow the prompts. Pairing writes the worker token to the local `.env` file.
+3. In Homework, create a one-time worker connection code. Then run `npm run pair` in PowerShell and follow the prompts. Pairing writes the worker token to the local `.env` file and restricts that file to your Windows account.
 4. Add `IBACALAO_LLM_BASE_URL` for an OpenAI-compatible model endpoint, or `IBACALAO_LLM_API_KEY` to use the default OpenAI endpoint. Set `IBACALAO_LLM_MODEL` unless the selected Homework job provides a model name.
 5. Run `npm run worker:windows:setup`. This creates a per-user Scheduled Task that starts the worker when you sign in. It does not require administrator rights.
 

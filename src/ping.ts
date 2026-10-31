@@ -29,6 +29,8 @@ let waitingMessageShown = false;
 let pausedMessageShown = false;
 let activeJobId: string | null = null;
 let activeClaimToken: string | null = null;
+let generationAbort: AbortController | null = null;
+let generationFinished: Promise<void> = Promise.resolve();
 
 async function processOne(): Promise<boolean> {
   // Check caps before claiming so a capped agent never holds a lease or calls a model.
@@ -69,16 +71,27 @@ async function processOne(): Promise<boolean> {
   console.log(`[homework-agent] Claimed job ${job.id}; generating draft.`);
   try {
     if (!budget.beginAttempt(job.id)) {
-      // The same job keeps coming back; stop spending on it and hand it back.
+      const persistBlocked = budget.blockedReason()?.includes("could not be saved");
+      const error = persistBlocked
+        ? "Local usage counters could not be saved."
+        : "Agent attempt limit reached for this assignment on this machine.";
       await request(`/api/agent/jobs/${encodeURIComponent(job.id)}/fail`, {
         claimToken: job.claimToken,
-        error: "Agent attempt limit reached for this assignment on this machine.",
+        error,
       }).catch(() => undefined);
-      throw new Error(`Skipped job ${job.id}: local attempt limit reached.`);
+      throw new Error(`Skipped job ${job.id}: ${persistBlocked ? "usage counters could not be saved" : "local attempt limit reached"}.`);
     }
     let output: Awaited<ReturnType<typeof runConfiguredAssignmentAgent>>;
     try {
-      output = await runConfiguredAssignmentAgent(job.prompt, job.modelName);
+      generationAbort = new AbortController();
+      let settleGeneration: () => void = () => undefined;
+      generationFinished = new Promise((resolve) => { settleGeneration = resolve; });
+      try {
+        output = await runConfiguredAssignmentAgent(job.prompt, job.modelName, { signal: generationAbort.signal });
+      } finally {
+        generationAbort = null;
+        settleGeneration();
+      }
       budget.recordTokens(output.tokensUsed ?? 0);
     } catch (error) {
       const message = error instanceof Error ? error.message.slice(0, 400) : "Agent failed.";
@@ -179,6 +192,8 @@ async function main(): Promise<void> {
     stopping = true;
     clearInterval(heartbeat);
     void (async () => {
+      generationAbort?.abort();
+      await generationFinished.catch(() => undefined);
       // Hand an unfinished job back now instead of leaving it leased until expiry.
       if (activeJobId && activeClaimToken) {
         await request(`/api/agent/jobs/${encodeURIComponent(activeJobId)}/fail`, {

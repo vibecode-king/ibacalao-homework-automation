@@ -3,7 +3,7 @@ import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
-import { runConfiguredAssignmentAgent } from "../src/agentRunner";
+import { estimateLocalCliTokens, runConfiguredAssignmentAgent } from "../src/agentRunner";
 
 test("Codex receives the selected model and no worker credential", async (t) => {
   const dir = mkdtempSync(join(tmpdir(), "homework-cli-"));
@@ -19,6 +19,7 @@ test("Codex receives the selected model and no worker credential", async (t) => 
   const result = await runConfiguredAssignmentAgent("Synthetic assignment", "chosen-model");
   const args = readFileSync(join(dir, "args"), "utf8").split("\n");
   assert.equal(result.artifactText, "Synthetic draft");
+  assert.equal(result.tokensUsed, estimateLocalCliTokens("Synthetic assignment", "Synthetic draft"));
   assert.equal(args[args.indexOf("-m") + 1], "chosen-model");
 });
 
@@ -37,4 +38,20 @@ test("Claude receives the selected model and no worker credential", async (t) =>
   const args = readFileSync(join(dir, "args"), "utf8").split("\n");
   assert.equal(result.artifactText, "Synthetic Claude draft");
   assert.equal(args[args.indexOf("--model") + 1], "chosen-claude-model");
+});
+
+test("local CLI work stops when the worker aborts", async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), "homework-cli-abort-"));
+  const original = { ...process.env };
+  t.after(() => { process.env = original; rmSync(dir, { recursive: true, force: true }); });
+  const executable = join(dir, "claude");
+  writeFileSync(executable, `#!/bin/sh\n/bin/cat >/dev/null\nexec /bin/sleep 30\n`);
+  chmodSync(executable, 0o700);
+  process.env.PATH = `${dir}:/usr/bin:/bin`;
+  process.env.IBACALAO_AGENT_CLI = "claude";
+  process.env.IBACALAO_AGENT_TOKEN = "agt_synthetic_test";
+  const abort = new AbortController();
+  const pending = runConfiguredAssignmentAgent("Synthetic assignment", undefined, { signal: abort.signal });
+  abort.abort();
+  await assert.rejects(pending, /Agent stopped before finishing/);
 });

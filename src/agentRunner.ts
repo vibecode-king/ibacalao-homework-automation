@@ -17,6 +17,14 @@ export type AssignmentAgentResult = {
 const DEFAULT_TIMEOUT_MS = 12 * 60 * 1000;
 const MAX_MODEL_RESPONSE_BYTES = 1_500_000;
 
+export type AssignmentAgentRunOptions = { signal?: AbortSignal };
+
+/** Conservative local-CLI spend count when the CLI does not report usage. */
+export function estimateLocalCliTokens(prompt: string, output: string): number {
+  const bytes = Buffer.byteLength(prompt, "utf8") + Buffer.byteLength(output, "utf8");
+  return Math.max(1, Math.ceil(bytes / 4));
+}
+
 function parseJsonOutput(raw: string): unknown {
   const trimmed = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
   try { return JSON.parse(trimmed); } catch { /* some CLIs print a short status line before the result */ }
@@ -49,7 +57,13 @@ export function parseAssignmentAgentResult(raw: string, defaults: { engine: stri
   };
 }
 
-async function runOpenAiCompatible(prompt: string, preferredModel?: string): Promise<AssignmentAgentResult> {
+function abortError(signal: AbortSignal | undefined, timeout: boolean): Error {
+  if (signal?.aborted) return new Error("Agent stopped before finishing.");
+  if (timeout) return new Error("The configured model request timed out.");
+  return new Error("The configured model request failed.");
+}
+
+async function runOpenAiCompatible(prompt: string, preferredModel?: string, signal?: AbortSignal): Promise<AssignmentAgentResult> {
   const configuredBaseUrl = (process.env.IBACALAO_LLM_BASE_URL || (process.env.IBACALAO_LLM_API_KEY ? "https://api.openai.com/v1" : "")).trim();
   if (!configuredBaseUrl) {
     throw new Error("Configure IBACALAO_LLM_BASE_URL for a BYOK or self-hosted model endpoint, and optionally set IBACALAO_LLM_API_KEY.");
@@ -66,6 +80,9 @@ async function runOpenAiCompatible(prompt: string, preferredModel?: string): Pro
   if (process.env.IBACALAO_LLM_API_KEY) headers.authorization = `Bearer ${process.env.IBACALAO_LLM_API_KEY}`;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
+  const onAbort = () => controller.abort();
+  signal?.addEventListener("abort", onAbort, { once: true });
+  if (signal?.aborted) controller.abort();
   try {
     const requestBody = {
       model,
@@ -107,9 +124,11 @@ async function runOpenAiCompatible(prompt: string, preferredModel?: string): Pro
     const reported = Number((payload as { usage?: { total_tokens?: unknown } }).usage?.total_tokens);
     return { ...parsedResult, tokensUsed: Number.isFinite(reported) && reported > 0 ? reported : requestBody.max_tokens };
   } catch (error) {
-    if (controller.signal.aborted) throw new Error("The configured model request timed out.");
+    if (signal?.aborted) throw abortError(signal, false);
+    if (controller.signal.aborted) throw abortError(undefined, true);
     throw error;
   } finally {
+    signal?.removeEventListener("abort", onAbort);
     clearTimeout(timer);
   }
 }
@@ -153,7 +172,7 @@ export function cliRunnerFromEnv(): "claude" | "codex" | null {
  * Runs the student's own installed AI CLI. Fixed argv (no shell), tools off or
  * read-only sandbox, an empty scratch directory, and no worker token in its env.
  */
-async function runLocalCli(cli: "claude" | "codex", prompt: string, preferredModel?: string): Promise<AssignmentAgentResult> {
+async function runLocalCli(cli: "claude" | "codex", prompt: string, preferredModel?: string, signal?: AbortSignal): Promise<AssignmentAgentResult> {
   const model = (preferredModel ?? "").trim();
   if (model && (model.length > 160 || model.startsWith("-") || /[\u0000-\u001f\u007f]/.test(model))) {
     throw new Error("The configured model name is invalid.");
@@ -169,14 +188,47 @@ async function runLocalCli(cli: "claude" | "codex", prompt: string, preferredMod
       const child = spawn(cli, args, { cwd: dir, env, stdio: ["pipe", "pipe", "pipe"] });
       let out = "";
       let err = "";
-      const timer = setTimeout(() => { child.kill("SIGKILL"); reject(new Error("The AI took too long and was stopped.")); }, DEFAULT_TIMEOUT_MS);
+      let settled = false;
+      const settle = (fn: () => void) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        fn();
+      };
+      const stopChild = () => {
+        child.kill("SIGTERM");
+        try { child.kill("SIGKILL"); } catch { /* already exiting */ }
+      };
+      const timer = setTimeout(() => {
+        stopChild();
+        settle(() => reject(new Error("The AI took too long and was stopped.")));
+      }, DEFAULT_TIMEOUT_MS);
+      const onAbort = () => {
+        stopChild();
+        settle(() => reject(new Error("Agent stopped before finishing.")));
+      };
+      const cleanup = () => {
+        clearTimeout(timer);
+        signal?.removeEventListener("abort", onAbort);
+      };
+      if (signal?.aborted) {
+        stopChild();
+        settle(() => reject(new Error("Agent stopped before finishing.")));
+        return;
+      }
+      signal?.addEventListener("abort", onAbort, { once: true });
       child.stdout.on("data", (chunk) => { if (out.length < MAX_MODEL_RESPONSE_BYTES) out += chunk; });
       child.stderr.on("data", (chunk) => { if (err.length < 4_000) err += chunk; });
-      child.on("error", (error) => { clearTimeout(timer); reject(new Error(`Could not start ${cli}: ${error.message}`)); });
+      child.on("error", (error) => { settle(() => reject(new Error(`Could not start ${cli}: ${error.message}`))); });
       child.on("close", (code) => {
-        clearTimeout(timer);
-        if (code === 0) resolve(out);
-        else reject(new Error(`${cli} exited with code ${code}. ${err.trim().slice(-200)}`));
+        if (signal?.aborted) {
+          settle(() => reject(new Error("Agent stopped before finishing.")));
+          return;
+        }
+        settle(() => {
+          if (code === 0) resolve(out);
+          else reject(new Error(`${cli} exited with code ${code}. ${err.trim().slice(-200)}`));
+        });
       });
       child.stdin.end(`${CLI_SYSTEM_PROMPT}\n\n${prompt}`);
     });
@@ -184,18 +236,19 @@ async function runLocalCli(cli: "claude" | "codex", prompt: string, preferredMod
     if (cli === "codex") {
       try { text = readFileSync(outFile, "utf8"); } catch { /* fall back to stdout */ }
     }
-    return parseAssignmentAgentResult(text, { engine: `${cli}-cli`, model: model || `${cli}-default` });
+    const parsed = parseAssignmentAgentResult(text, { engine: `${cli}-cli`, model: model || `${cli}-default` });
+    return { ...parsed, tokensUsed: estimateLocalCliTokens(prompt, parsed.artifactText) };
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
 }
 
 /** Send the prompt only to the explicitly configured OpenAI-compatible endpoint. */
-export async function runConfiguredAssignmentAgent(prompt: string, preferredModel?: string): Promise<AssignmentAgentResult> {
+export async function runConfiguredAssignmentAgent(prompt: string, preferredModel?: string, options?: AssignmentAgentRunOptions): Promise<AssignmentAgentResult> {
   const cli = cliRunnerFromEnv();
-  if (cli) return runLocalCli(cli, prompt, preferredModel);
+  if (cli) return runLocalCli(cli, prompt, preferredModel, options?.signal);
   if (process.env.IBACALAO_AGENT_COMMAND?.trim()) {
     throw new Error("IBACALAO_AGENT_COMMAND is disabled because local CLI execution is not sandboxed. Unset it and configure IBACALAO_LLM_BASE_URL instead.");
   }
-  return runOpenAiCompatible(prompt, preferredModel);
+  return runOpenAiCompatible(prompt, preferredModel, options?.signal);
 }

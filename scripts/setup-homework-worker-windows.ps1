@@ -75,6 +75,12 @@ function ConvertTo-PowerShellLiteral([string]$Value) {
     return "'" + $Value.Replace("'", "''") + "'"
 }
 
+# Task Scheduler hands this string to powershell.exe as process arguments.
+# It is not evaluated as PowerShell first, so -File needs CommandLine quotes.
+function ConvertTo-CommandLineArgument([string]$Value) {
+    return '"' + $Value.Replace('"', '""') + '"'
+}
+
 $launcherTemplate = @'
 # iBacalao Windows Homework worker launcher. Managed by setup-homework-worker-windows.ps1.
 $ErrorActionPreference = 'Continue'
@@ -99,7 +105,7 @@ if (Test-Path -LiteralPath $launcherPath -PathType Leaf) {
 Set-Content -LiteralPath $launcherPath -Value $launcherBody -Encoding UTF8
 
 $powerShellPath = (Get-Command 'powershell.exe' -ErrorAction Stop).Source
-$taskArgs = '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File ' + (ConvertTo-PowerShellLiteral $launcherPath)
+$taskArgs = '-NoProfile -NonInteractive -ExecutionPolicy Bypass -File ' + (ConvertTo-CommandLineArgument $launcherPath)
 $action = New-ScheduledTaskAction -Execute $powerShellPath -Argument $taskArgs -WorkingDirectory $RepoRoot
 $currentUser = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 $trigger = New-ScheduledTaskTrigger -AtLogOn -User $currentUser

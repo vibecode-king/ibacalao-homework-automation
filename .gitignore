@@ -13,3 +13,6 @@ native/**/DerivedData/
 native/marginalia/.leo_keychain_password
 dist/
 *.dmg
+
+# built app bundles
+*.app/

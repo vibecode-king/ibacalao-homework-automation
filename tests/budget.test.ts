@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Backoff, DailyBudget, limitsFromEnv } from "../src/budget";
@@ -51,4 +51,21 @@ test("backoff doubles to a ceiling and resets on success", () => {
 
 test("env limits are clamped and fall back on junk", () => {
   assert.deepEqual(limitsFromEnv({ IBACALAO_MAX_JOBS_PER_DAY: "x", IBACALAO_MAX_TOKENS_PER_DAY: "999999999999" }), { maxJobsPerDay: 20, maxTokensPerDay: 20_000_000, maxAttemptsPerJob: 2 });
+});
+
+test("unreadable usage state fails closed instead of resetting to zero", () => {
+  const path = file();
+  writeFileSync(path, "{not-json");
+  const budget = new DailyBudget({ maxJobsPerDay: 20, maxTokensPerDay: 400_000, maxAttemptsPerJob: 2 }, path);
+  assert.match(budget.blockedReason() ?? "", /could not be saved/);
+  assert.equal(budget.beginAttempt("a"), false);
+});
+
+test("a usage file that cannot be written blocks further jobs", () => {
+  const dir = mkdtempSync(join(tmpdir(), "ib-budget-ro-"));
+  const path = join(dir, "usage.json");
+  mkdirSync(path);
+  const budget = new DailyBudget({ maxJobsPerDay: 20, maxTokensPerDay: 400_000, maxAttemptsPerJob: 2 }, path);
+  assert.match(budget.blockedReason() ?? "", /could not be saved/);
+  assert.equal(budget.beginAttempt("a"), false);
 });

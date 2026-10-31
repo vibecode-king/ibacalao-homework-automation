@@ -1,4 +1,5 @@
 import { chmod, readFile, rename, unlink, writeFile } from "node:fs/promises";
+import { protectSecretFile } from "./secretFile";
 import { randomUUID } from "node:crypto";
 import { dirname, resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
@@ -58,7 +59,7 @@ async function savePairing(baseUrl: string, token: string): Promise<void> {
     await writeFile(temporaryPath, updated, { flag: "wx", mode: 0o600 });
     await chmod(temporaryPath, 0o600);
     await rename(temporaryPath, ENV_PATH);
-    await chmod(ENV_PATH, 0o600);
+    await protectSecretFile(ENV_PATH);
   } catch (error) {
     await unlink(temporaryPath).catch(() => undefined);
     throw error;

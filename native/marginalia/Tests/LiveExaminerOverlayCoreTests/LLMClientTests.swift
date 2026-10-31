@@ -52,6 +52,16 @@ final class LLMClientTests: XCTestCase {
         ))
     }
 
+    func testScriptMessagesRequireATrustedOrigin() {
+        XCTAssertTrue(NativeHostPolicy.allowsWebOrigin(scheme: "https", host: "www.ibacalao.com"))
+        XCTAssertTrue(NativeHostPolicy.allowsWebOrigin(scheme: "https", host: "app.ibacalao.com"))
+        XCTAssertTrue(NativeHostPolicy.allowsWebOrigin(scheme: "http", host: "localhost"))
+        XCTAssertFalse(NativeHostPolicy.allowsWebOrigin(scheme: "https", host: "evil.example"))
+        XCTAssertFalse(NativeHostPolicy.allowsWebOrigin(scheme: "http", host: "www.ibacalao.com"))
+        XCTAssertFalse(NativeHostPolicy.allowsWebOrigin(scheme: "https", host: "anything.vercel.app"))
+        XCTAssertTrue(NativeHostPolicy.isTrustedShellHost("ibacalao-git-dev-vanos-projects-91d1222a.vercel.app"))
+    }
+
     func testTipDisplayIsPlainAndActionFirst() throws {
         let raw = """
         {"subject":"Biology","confidence":"high","problem":"The conclusion is too broad — it ignores uncertainty","section":"Conclusion","whyItMatters":"The result may not support the claim","fix":"Rewrite the final sentence using the uncertainty range","doneWhen":"The final sentence names the range and answers the question"}

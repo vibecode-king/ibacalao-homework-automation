@@ -140,6 +140,13 @@ enum NativeRoutes {
     }
 }
 
+func allowsNativeScriptMessage(_ message: WKScriptMessage) -> Bool {
+    NativeHostPolicy.allowsWebOrigin(
+        scheme: message.frameInfo.securityOrigin.protocol,
+        host: message.frameInfo.securityOrigin.host
+    )
+}
+
 final class ShellMessageHandler: NSObject, WKScriptMessageHandler {
     static let shared = ShellMessageHandler()
 
@@ -147,6 +154,7 @@ final class ShellMessageHandler: NSObject, WKScriptMessageHandler {
         _ userContentController: WKUserContentController,
         didReceive message: WKScriptMessage
     ) {
+        guard allowsNativeScriptMessage(message) else { return }
         if message.name == "openMarginalia" {
             Task { @MainActor in
                 ShellController.shared?.load(path: "/homework?retired=1")
@@ -289,6 +297,10 @@ final class SchoolNotificationsHandler: NSObject, WKScriptMessageHandlerWithRepl
         didReceive message: WKScriptMessage,
         replyHandler: @escaping (Any?, String?) -> Void
     ) {
+        guard allowsNativeScriptMessage(message) else {
+            replyHandler(nil, "forbidden")
+            return
+        }
         let enabled = (message.body as? [String: Any])?["enabled"] as? Bool ?? true
         Task { @MainActor in
             let state = await NativeMacSchoolNotifications.setEnabled(enabled)
@@ -306,6 +318,10 @@ final class ImageTextHandler: NSObject, WKScriptMessageHandlerWithReply {
         didReceive message: WKScriptMessage,
         replyHandler: @escaping (Any?, String?) -> Void
     ) {
+        guard allowsNativeScriptMessage(message) else {
+            replyHandler(nil, "forbidden")
+            return
+        }
         guard let dataURL = message.body as? String,
               let comma = dataURL.firstIndex(of: ","),
               let data = Data(base64Encoded: String(dataURL[dataURL.index(after: comma)...])),
@@ -422,18 +438,22 @@ final class ShellWebCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate, O
             decisionHandler(.cancel)
             return
         }
-        guard navigationAction.targetFrame?.isMainFrame == true,
-              url.scheme == "http" || url.scheme == "https"
-        else {
+        let isHttp = url.scheme == "http" || url.scheme == "https"
+        if isHttp, let frame = navigationAction.targetFrame, frame.isMainFrame == false {
+            if NativeHostPolicy.isTrustedShellHost(url.host ?? "") {
+                decisionHandler(.allow)
+            } else {
+                decisionHandler(.cancel)
+            }
+            return
+        }
+        guard navigationAction.targetFrame?.isMainFrame == true, isHttp else {
             decisionHandler(.allow)
             return
         }
 
-        let allowedHosts: Set<String> = ["ibacalao.com", "www.ibacalao.com", "localhost", "127.0.0.1"]
         let host = url.host ?? ""
-        let isOwnHost = allowedHosts.contains(host)
-            || host.hasSuffix(".ibacalao.com")
-            || NativeHostPolicy.isTrustedPreviewHost(host)
+        let isOwnHost = NativeHostPolicy.isTrustedShellHost(host)
         if isOwnHost, NativeRoutes.isRetiredProductRoute(url) {
             decisionHandler(.cancel)
             Task { @MainActor in
