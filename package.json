@@ -30,7 +30,7 @@
     "@modelcontextprotocol/sdk": "^1.32.1",
     "fflate": "^0.8.3",
     "pdfjs-dist": "^6.4.299",
-    "playwright": "^1.61.1",
+    "playwright": "^1.65.0",
     "tsx": "^4.19.0",
     "zod": "^4.6.7"
   },
